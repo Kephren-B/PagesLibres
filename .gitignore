@@ -1,0 +1,20 @@
+# Environnement
+.env
+.env.local
+.env.*.local
+
+# Backend (Symfony)
+backend/var/
+backend/vendor/
+backend/.env.local
+backend/.env.*.local
+
+# Frontend (React/Vite)
+frontend/node_modules/
+frontend/dist/
+
+# Éditeurs / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
