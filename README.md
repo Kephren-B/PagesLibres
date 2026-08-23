@@ -29,21 +29,34 @@ docker-compose.yml
   container compile (`bin/console lint:container`).
 - `frontend/` : squelette React 19 + Vite généré (`pnpm create vite`),
   dépendances installées (`pnpm install`).
-- **Non vérifié ici** : le schéma n'a pas été validé contre un vrai
-  PostgreSQL+PostGIS (Docker non disponible dans l'environnement de
-  développement où ces fichiers ont été générés) — à faire avec
-  `docker compose up` puis `bin/console doctrine:schema:validate`.
+- **Stack validée de bout en bout** avec `docker compose up` : les 9
+  entités écrivent/lisent correctement à travers les types `ENUM`
+  PostgreSQL natifs (mapping ajouté dans `config/packages/doctrine.yaml`),
+  le trigger `trg_maj_position_exemplaire` met bien à jour la position
+  géospatiale de l'exemplaire à l'insertion d'un mouvement, et la
+  suppression d'un compte anonymise ses mouvements (`SET NULL`) sans les
+  effacer. Les 4 services (API, frontend, DB, Adminer) répondent.
+  `doctrine:schema:validate` signale des différences de style avec le MPD
+  (IDENTITY vs SERIAL, VARCHAR vs ENUM natif) — attendu et volontaire : le
+  script SQL reste la source de vérité du schéma, pas
+  `doctrine:schema:update`.
 
 ## Démarrage local
 
 ```bash
-cp .env.example .env        # ajuster les secrets locaux si besoin
+cp .env.example .env                    # ajuster les secrets locaux si besoin
+cp backend/.env.example backend/.env    # puis générer un vrai APP_SECRET
 docker compose up --build
 ```
 
-- Backend : http://localhost:8080 (API Platform sur `/api`)
+- Backend : http://localhost:8090 (API Platform sur `/api`)
 - Frontend : http://localhost:5173
 - Adminer : http://localhost:8081
+- PostgreSQL : localhost:55432
+
+> Ports 8090/55432 choisis pour éviter des conflits courants avec d'autres
+> services locaux (8080, 5432 par défaut) — à ajuster dans
+> `docker-compose.yml` si besoin sur une autre machine.
 
 ## Règles de conception non négociables
 

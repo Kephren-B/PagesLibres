@@ -1,6 +1,6 @@
 services:
   database:
-    image: postgis/postgis:18-3.4
+    image: postgis/postgis:18-3.6
     container_name: pageslibres_db
     restart: unless-stopped
     environment:
@@ -8,9 +8,14 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      # 55432 côté hôte : le 5432 par défaut est déjà pris par une instance
+      # PostgreSQL locale sur cette machine de dev.
+      - "55432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      # PostgreSQL 18+ : le point de montage attend /var/lib/postgresql
+      # (pas .../data), la donnée est placée dans une sous-arborescence
+      # versionnée par l'image (compatibilité pg_ctlcluster).
+      - db_data:/var/lib/postgresql
       # Initialise la base avec le MPD validé au Jalon 3 (exécuté une seule
       # fois, au premier démarrage du volume). Ce script est une copie de
       # jalons/jalon-3-modelisation-bd/pageslibres_mpd.sql du dépôt de
@@ -37,13 +42,19 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    # ./backend est bind-mounté avec l'ownership de l'hôte ; var/ doit
+    # rester writable par www-data (utilisateur des workers php-fpm) à
+    # chaque démarrage du conteneur.
+    command: sh -c "mkdir -p var/cache var/log && chown -R www-data:www-data var && exec docker-php-entrypoint php-fpm"
 
   nginx:
     image: nginx:1.27-alpine
     container_name: pageslibres_nginx
     restart: unless-stopped
     ports:
-      - "8080:80"
+      # 8090 côté hôte : le 8080 par défaut est déjà pris par un autre
+      # projet Docker sur cette machine de dev.
+      - "8090:80"
     volumes:
       - ./backend:/var/www/html:ro
       - ./backend/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
@@ -61,8 +72,8 @@ services:
       - ./frontend:/app
       - frontend_node_modules:/app/node_modules
     environment:
-      VITE_API_URL: http://localhost:8080
-    command: pnpm run dev -- --host 0.0.0.0
+      VITE_API_URL: http://localhost:8090
+    command: pnpm exec vite --host 0.0.0.0
 
   adminer:
     image: adminer:4
