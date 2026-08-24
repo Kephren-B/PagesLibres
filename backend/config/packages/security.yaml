@@ -1,0 +1,52 @@
+security:
+    password_hashers:
+        App\Entity\Utilisateur: auto
+
+    providers:
+        app_user_provider:
+            entity:
+                class: App\Entity\Utilisateur
+                property: email
+
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+
+        # Endpoint de connexion (F1) : json_login émet le JWT via les
+        # handlers Lexik. login_throttling protège contre le brute-force
+        # (RateLimiter, cf. CDC) : au-delà de 5 tentatives échouées en 15
+        # minutes pour un même identifiant, l'authentification est bloquée.
+        login:
+            pattern: ^/api/login
+            stateless: true
+            json_login:
+                check_path: /api/login_check
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        # Le reste de l'API : stateless, authentification par JWT quand un
+        # token est présent, anonyme sinon (autorisation fine gérée par
+        # l'attribut "security" de chaque opération API Platform).
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            jwt: ~
+
+    access_control:
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+
+when@test:
+    security:
+        password_hashers:
+            App\Entity\Utilisateur:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10
