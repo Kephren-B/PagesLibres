@@ -54,6 +54,13 @@ jobs:
           path: backend/vendor
           key: composer-${{ hashFiles('backend/composer.lock') }}
 
+      # Symfony exige un fichier .env au boot (post-install cache:clear),
+      # mais il est gitignoré : on en crée un depuis l'exemple. Les vraies
+      # valeurs (APP_ENV, DATABASE_URL, JWT_*, APP_SECRET) sont injectées par
+      # le job et priment sur le .env.
+      - name: Préparer l'environnement (.env)
+        run: cp .env.example .env
+
       - name: Installer les dépendances
         run: composer install --no-interaction --no-progress --prefer-dist
 
