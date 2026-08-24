@@ -12,6 +12,11 @@ backend/.env.*.local
 # Frontend (React/Vite)
 frontend/node_modules/
 frontend/dist/
+frontend/.pnpm-store/
+
+# Artefacts locaux / secrets (jamais versionnés)
+backend/.phpunit.cache/
+backend/config/jwt/
 
 # Éditeurs / OS
 .idea/
