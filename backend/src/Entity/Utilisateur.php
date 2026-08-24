@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Enum\RoleUtilisateur;
+use App\State\MoiProvider;
 use App\State\UtilisateurProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -24,6 +25,9 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Aucune écriture directe de "role" ou "motDePasseHash" par le client :
  * seul UtilisateurProcessor peut les fixer (hash du mot de passe, rôle
  * "membre" forcé à l'inscription).
+ *
+ * GET /api/moi (F9) : profil de l'utilisateur authentifié courant, via
+ * MoiProvider (lit le token, pas d'{id} dans l'URL).
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'utilisateur')]
@@ -31,6 +35,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(),
         new Get(),
+        new Get(uriTemplate: '/moi', provider: MoiProvider::class, security: "is_granted('ROLE_USER')"),
         new Post(processor: UtilisateurProcessor::class),
     ],
     normalizationContext: ['groups' => ['utilisateur:read']],
@@ -47,7 +52,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'pseudo', type: Types::STRING, length: 50, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['utilisateur:read', 'utilisateur:write', 'avis:read', 'commentaire:read', 'mouvement:read', 'exemplaire:read'])]
+    #[Groups(['utilisateur:read', 'utilisateur:write', 'avis:read', 'commentaire:read', 'mouvement:read', 'exemplaire:read', 'signalement:read'])]
     private string $pseudo;
 
     #[ORM\Column(name: 'email', type: Types::STRING, length: 255, unique: true)]

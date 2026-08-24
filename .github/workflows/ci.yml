@@ -76,6 +76,16 @@ jobs:
           PGPASSWORD=pageslibres_ci psql -h 127.0.0.1 -U pageslibres -d pageslibres_test \
             -f docker/postgres/init/001_mpd.sql
 
+      # Le schéma vient de 001_mpd.sql (pas de doctrine:schema:update), mais
+      # les données de référence (5 badges F9) sont portées par une vraie
+      # migration Doctrine : on marque la baseline no-op comme déjà exécutée
+      # puis on applique le reste (seed des badges).
+      - name: Appliquer les migrations de données (seed badges)
+        run: |
+          php bin/console doctrine:migrations:sync-metadata-storage --no-interaction
+          php bin/console doctrine:migrations:version --add --no-interaction 'DoctrineMigrations\Version20260824102256'
+          php bin/console doctrine:migrations:migrate --no-interaction
+
       - name: Lint du conteneur de services
         run: php bin/console lint:container --env=test
 

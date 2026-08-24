@@ -11,6 +11,7 @@ use App\Entity\Mouvement;
 use App\Entity\Utilisateur;
 use App\Enum\StatutExemplaire;
 use App\Enum\TypeMouvement;
+use App\Gamification\BadgeAttributionService;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Validator\ConstraintViolation;
@@ -36,6 +37,7 @@ final class MouvementProcessor implements ProcessorInterface
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
         private readonly ProcessorInterface $persistProcessor,
         private readonly Security $security,
+        private readonly BadgeAttributionService $badgeAttributionService,
     ) {
     }
 
@@ -70,7 +72,15 @@ final class MouvementProcessor implements ProcessorInterface
             $exemplaire->setStatut(StatutExemplaire::EnCirculation);
         }
 
-        return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
+        $result = $this->persistProcessor->process($data, $operation, $uriVariables, $context);
+
+        // F9 : recalcul synchrone des badges après chaque mouvement, pas de
+        // job planifié (volume attendu trop faible pour le justifier).
+        if ($user instanceof Utilisateur) {
+            $this->badgeAttributionService->evaluerEtAttribuer($user);
+        }
+
+        return $result;
     }
 
     private function conflict(string $property, string $message): ValidationException
