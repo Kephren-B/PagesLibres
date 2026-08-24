@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Enum\TypeMouvement;
 use App\Geo\GeoRounding;
@@ -22,6 +25,12 @@ use Symfony\Component\Validator\Constraints as Assert;
  * client. latitude/longitude sont en écriture seule (jamais dans un
  * groupe de lecture) : seule getPositionArrondie() sort de l'API — règle
  * non négociable, l'API n'expose jamais une position exacte.
+ *
+ * GetCollection + filtre "utilisateur" (F9, profil : historique des
+ * mouvements). Ouvert à tout membre authentifié, pas restreint à
+ * soi-même : le journal de voyage d'un Exemplaire (Get, public) expose
+ * déjà les mêmes mouvements avec le pseudo du contributeur, ce endpoint
+ * n'élève donc pas le niveau d'exposition existant.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'mouvement')]
@@ -29,11 +38,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new Get(),
+        new GetCollection(security: "is_granted('ROLE_USER')"),
         new Post(processor: MouvementProcessor::class, security: "is_granted('ROLE_USER')"),
     ],
     normalizationContext: ['groups' => ['mouvement:read']],
     denormalizationContext: ['groups' => ['mouvement:write']],
 )]
+#[ApiFilter(SearchFilter::class, properties: ['utilisateur' => 'exact', 'typeMouvement' => 'exact'])]
 class Mouvement
 {
     #[ORM\Id]

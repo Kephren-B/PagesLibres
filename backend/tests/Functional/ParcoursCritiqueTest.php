@@ -157,6 +157,14 @@ final class ParcoursCritiqueTest extends ApiTestCase
         ]]);
         self::assertResponseStatusCodeSame(422, 'Une note hors de l\'intervalle 1-5 doit être rejetée.');
 
+        // --- F7 (négatif) : un second avis du même utilisateur sur le même
+        // livre doit être un 422 propre (UNIQUE en base), pas un 500 ---
+        $client->request('POST', '/api/avis', $auth + ['json' => [
+            'livre' => $livreIri,
+            'note' => 3,
+        ]]);
+        self::assertResponseStatusCodeSame(422, 'Un doublon d\'avis (même utilisateur, même livre) doit être un 422, pas un 500.');
+
         // --- F7 : commentaire sur l'avis ---
         $client->request('POST', '/api/commentaires', $auth + ['json' => [
             'avis' => "/api/avis/{$avis['idAvis']}",
@@ -177,5 +185,27 @@ final class ParcoursCritiqueTest extends ApiTestCase
         self::assertResponseIsSuccessful();
         $avisListe = json_decode($client->getResponse()->getContent(), true);
         self::assertCount(1, $avisListe['member'] ?? $avisListe, 'Le filtre par livre doit renvoyer l\'avis créé.');
+
+        // --- F9 : profil de l'utilisateur courant ---
+        $client->request('GET', '/api/moi', $auth);
+        self::assertResponseIsSuccessful();
+        $profil = json_decode($client->getResponse()->getContent(), true);
+        self::assertSame("lecteur_{$suffix}", $profil['pseudo']);
+        self::assertSame($email, $profil['email'], 'L\'utilisateur voit son propre email sur /api/moi (ApiProperty::security).');
+
+        // --- F9 : historique des mouvements du lecteur courant ---
+        $client->request('GET', "/api/mouvements?utilisateur=/api/utilisateurs/{$profil['idUtilisateur']}", $auth);
+        self::assertResponseIsSuccessful();
+        $mesMouvements = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(2, $mesMouvements['member'] ?? $mesMouvements, 'La libération et la trouvaille doivent apparaître dans l\'historique.');
+
+        // --- F9 : le badge "premiere_liberation" doit avoir été attribué
+        // automatiquement après la libération (MouvementProcessor). ---
+        $client->request('GET', "/api/obtention_badges?utilisateur=/api/utilisateurs/{$profil['idUtilisateur']}", $auth);
+        self::assertResponseIsSuccessful();
+        $badges = json_decode($client->getResponse()->getContent(), true);
+        $badges = $badges['member'] ?? $badges;
+        self::assertNotEmpty($badges, 'Le badge "premiere_liberation" doit être attribué après une première libération.');
+        self::assertSame('Premier envol', $badges[0]['badge']['nom'] ?? null);
     }
 }
