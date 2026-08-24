@@ -1,6 +1,15 @@
 security:
     password_hashers:
-        App\Entity\Utilisateur: auto
+        # OWASP Password Storage Cheat Sheet : Argon2id recommandé
+        # (mémoire 64 MiB, time_cost=4). Les anciens hashes bcrypt ("$2y$")
+        # éventuels demeurent vérifiables : Symfony les ré-hashé en Argon2id
+        # à la connexion suivante (MigratingPasswordHasher) — aucune rupture
+        # pour les comptes existants.
+        App\Entity\Utilisateur:
+            algorithm: argon2id
+            memory_cost: 65536
+            time_cost: 4
+
 
     providers:
         app_user_provider:
@@ -49,8 +58,9 @@ security:
 when@test:
     security:
         password_hashers:
+            # Test uniquement : coûts réduits pour garder la suite rapide,
+            # tout en restant sur Argon2id (même algorithm qu'en réel).
             App\Entity\Utilisateur:
-                algorithm: auto
-                cost: 4
+                algorithm: argon2id
+                memory_cost: 1024
                 time_cost: 3
-                memory_cost: 10
