@@ -139,5 +139,43 @@ final class ParcoursCritiqueTest extends ApiTestCase
         $proches = json_decode($client->getResponse()->getContent(), true);
         $idsProches = array_column($proches['member'] ?? $proches, 'idExemplaire');
         self::assertContains($exemplaire['idExemplaire'], $idsProches, 'La recherche de proximité doit retrouver l\'exemplaire libéré.');
+
+        // --- F7 : publication d'un avis noté sur le livre ---
+        $client->request('POST', '/api/avis', $auth + ['json' => [
+            'livre' => $livreIri,
+            'note' => 5,
+            'commentaire' => 'Un excellent parcours de lecture !',
+        ]]);
+        self::assertResponseStatusCodeSame(201);
+        $avis = json_decode($client->getResponse()->getContent(), true);
+        self::assertSame("lecteur_{$suffix}", $avis['utilisateur']['pseudo'] ?? null, 'L\'auteur de l\'avis doit être l\'utilisateur authentifié, jamais fourni par le client.');
+
+        // --- F7 (négatif) : une note hors de 1-5 est rejetée ---
+        $client->request('POST', '/api/avis', $auth + ['json' => [
+            'livre' => $livreIri,
+            'note' => 9,
+        ]]);
+        self::assertResponseStatusCodeSame(422, 'Une note hors de l\'intervalle 1-5 doit être rejetée.');
+
+        // --- F7 : commentaire sur l'avis ---
+        $client->request('POST', '/api/commentaires', $auth + ['json' => [
+            'avis' => "/api/avis/{$avis['idAvis']}",
+            'contenu' => 'Totalement d\'accord avec cet avis.',
+        ]]);
+        self::assertResponseStatusCodeSame(201);
+
+        // --- F7 (négatif) : un commentaire ne peut cibler avis ET livre à la fois ---
+        $client->request('POST', '/api/commentaires', $auth + ['json' => [
+            'avis' => "/api/avis/{$avis['idAvis']}",
+            'livre' => $livreIri,
+            'contenu' => 'Double cible interdite.',
+        ]]);
+        self::assertResponseStatusCodeSame(422, 'Un commentaire avec avis ET livre doit être rejeté (ExactlyOneTarget).');
+
+        // --- F7 : lecture publique des avis filtrés par livre ---
+        $client->request('GET', "/api/avis?livre={$livre['idLivre']}", $auth);
+        self::assertResponseIsSuccessful();
+        $avisListe = json_decode($client->getResponse()->getContent(), true);
+        self::assertCount(1, $avisListe['member'] ?? $avisListe, 'Le filtre par livre doit renvoyer l\'avis créé.');
     }
 }
