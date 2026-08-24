@@ -53,6 +53,11 @@ export const api = {
 
   createMouvement: (payload) => request('/api/mouvements', { method: 'POST', body: payload, auth: true }),
 
+  listAvis: (livreId) => request(`/api/avis?livre=${livreId}`),
+  createAvis: (payload) => request('/api/avis', { method: 'POST', body: payload, auth: true }),
+  listCommentaires: (query = '') => request(`/api/commentaires${query}`),
+  createCommentaire: (payload) => request('/api/commentaires', { method: 'POST', body: payload, auth: true }),
+
   proximite: (lat, lon, rayon = 5000) =>
     request(`/api/exemplaires/proximite?lat=${lat}&lon=${lon}&rayon=${rayon}`, { auth: true }),
 }

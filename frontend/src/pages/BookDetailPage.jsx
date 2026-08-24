@@ -22,12 +22,27 @@ export function BookDetailPage() {
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
   const [busy, setBusy] = useState(false)
+  const [avis, setAvis] = useState([])
+  const [commentaires, setCommentaires] = useState({})
+  const [note, setNote] = useState('5')
+  const [avisTexte, setAvisTexte] = useState('')
+  const [commentContenu, setCommentContenu] = useState('')
 
   const reload = useCallback(async () => {
     const livreData = await api.getLivre(id)
     setLivre(livreData)
     const exemplairesData = await api.listExemplaires(`?livre=/api/livres/${id}`)
     setExemplaires(Array.isArray(exemplairesData) ? exemplairesData : exemplairesData.member ?? [])
+
+    const avisData = await api.listAvis(id)
+    const avisList = Array.isArray(avisData) ? avisData : avisData.member ?? []
+    setAvis(avisList)
+    const commentairesByAvis = {}
+    for (const avisItem of avisList) {
+      const c = await api.listCommentaires(`?avis=${avisItem.idAvis}`)
+      commentairesByAvis[avisItem.idAvis] = Array.isArray(c) ? c : c.member ?? []
+    }
+    setCommentaires(commentairesByAvis)
   }, [id])
 
   useEffect(() => {
@@ -81,6 +96,35 @@ export function BookDetailPage() {
       setError(err.message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleAjouterAvis(event) {
+    event.preventDefault()
+    setError(null)
+    try {
+      await api.createAvis({
+        livre: `/api/livres/${id}`,
+        note: Number(note),
+        commentaire: avisTexte.trim() || null,
+      })
+      setNote('5')
+      setAvisTexte('')
+      await reload()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleAjouterCommentaire(event, avisId) {
+    event.preventDefault()
+    setError(null)
+    try {
+      await api.createCommentaire({ avis: `/api/avis/${avisId}`, contenu: commentContenu })
+      setCommentContenu('')
+      await reload()
+    } catch (err) {
+      setError(err.message)
     }
   }
 
@@ -150,6 +194,56 @@ export function BookDetailPage() {
             </label>
             <button type="button" onClick={useMaPosition}>Utiliser ma position actuelle</button>
             <button type="submit" disabled={busy}>{busy ? 'Libération…' : 'Libérer cet exemplaire'}</button>
+          </form>
+        </div>
+      )}
+
+      <h2>Avis des lecteurs</h2>
+      {avis.length === 0 && <p>Aucun avis pour l'instant.</p>}
+      <ul className="avis-list">
+        {avis.map((avisItem) => (
+          <li key={avisItem.idAvis}>
+            <strong>{avisItem.utilisateur?.pseudo ?? 'Anonyme'}</strong> — {'★'.repeat(avisItem.note)}{'☆'.repeat(5 - avisItem.note)}
+            {avisItem.commentaire && <p>{avisItem.commentaire}</p>}
+            <ul className="commentaire-list">
+              {(commentaires[avisItem.idAvis] ?? []).map((c) => (
+                <li key={c.idCommentaire}>
+                  <strong>{c.utilisateur?.pseudo ?? 'Anonyme'}</strong> — {c.contenu}
+                </li>
+              ))}
+            </ul>
+            {isAuthenticated && (
+              <form className="inline-form" onSubmit={(e) => handleAjouterCommentaire(e, avisItem.idAvis)}>
+                <input
+                  value={commentContenu}
+                  onChange={(e) => setCommentContenu(e.target.value)}
+                  placeholder="Répondre…"
+                  required
+                />
+                <button type="submit">Commenter</button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {isAuthenticated && (
+        <div className="page-form">
+          <h3>Donner mon avis</h3>
+          <form onSubmit={handleAjouterAvis}>
+            <label>
+              Note (1-5)
+              <select value={note} onChange={(e) => setNote(e.target.value)}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Commentaire
+              <textarea value={avisTexte} onChange={(e) => setAvisTexte(e.target.value)} />
+            </label>
+            <button type="submit">Publier mon avis</button>
           </form>
         </div>
       )}

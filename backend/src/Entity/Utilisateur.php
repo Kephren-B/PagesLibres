@@ -47,7 +47,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'pseudo', type: Types::STRING, length: 50, unique: true)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    #[Groups(['utilisateur:read', 'utilisateur:write'])]
+    #[Groups(['utilisateur:read', 'utilisateur:write', 'avis:read', 'commentaire:read', 'mouvement:read', 'exemplaire:read'])]
     private string $pseudo;
 
     #[ORM\Column(name: 'email', type: Types::STRING, length: 255, unique: true)]
