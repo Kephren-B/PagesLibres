@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      database:
+        image: postgis/postgis:18-3.6
+        env:
+          POSTGRES_DB: pageslibres_test
+          POSTGRES_USER: pageslibres
+          POSTGRES_PASSWORD: pageslibres_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pageslibres -d pageslibres_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      APP_ENV: test
+      APP_SECRET: ci-secret-not-for-production
+      DATABASE_URL: "postgresql://pageslibres:pageslibres_ci@127.0.0.1:5432/pageslibres_test?serverVersion=18&charset=utf8"
+      JWT_SECRET_KEY: "%kernel.project_dir%/config/jwt/private.pem"
+      JWT_PUBLIC_KEY: "%kernel.project_dir%/config/jwt/public.pem"
+      JWT_PASSPHRASE: ci-passphrase-not-for-production
+      CORS_ALLOW_ORIGIN: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, intl, zip
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Générer la paire de clés JWT (usage CI uniquement)
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+
+      - name: Charger le MPD validé (source de vérité du schéma)
+        run: |
+          sudo apt-get update -yqq && sudo apt-get install -yqq postgresql-client
+          PGPASSWORD=pageslibres_ci psql -h 127.0.0.1 -U pageslibres -d pageslibres_test \
+            -f docker/postgres/init/001_mpd.sql
+
+      - name: Lint du conteneur de services
+        run: php bin/console lint:container --env=test
+
+      - name: Exécuter la suite PHPUnit
+        run: php bin/phpunit

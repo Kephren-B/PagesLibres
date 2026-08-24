@@ -9,3 +9,12 @@
 
 controllers:
     resource: routing.controllers
+
+# F1 : le contrôleur n'est jamais atteint — le firewall "login"
+# (json_login) intercepte la requête avant le routeur et répond via
+# lexik_jwt_authentication.handler.authentication_success. La route doit
+# néanmoins exister pour que le routeur ne renvoie pas 404 avant que le
+# firewall n'ait sa chance.
+api_login_check:
+    path: /api/login_check
+    methods: [POST]
