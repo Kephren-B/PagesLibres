@@ -15,5 +15,10 @@ if [ ! -f /var/www/html/config/jwt/private.pem ] && [ -n "$JWT_PASSPHRASE" ]; th
     php /var/www/html/bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
 fi
 
+# La commande ci-dessus (exécutée en root) boote le kernel Symfony et crée
+# var/cache/prod appartenant à root. On re-prend possession de var pour que
+# les workers php-fpm (www-data) puissent écrire le cache à l'exécution.
+chown -R www-data:www-data var /run/nginx
+
 php-fpm -D
 exec nginx -g 'daemon off;'

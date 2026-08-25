@@ -1,0 +1,12 @@
+# Jamais embarqué dans l'image : dépendances, cache, secrets locaux.
+vendor/
+var/
+.env
+.env.*
+!.env.example
+config/jwt/
+tests/
+.phpunit.cache/
+.git/
+.dockerignore
+Dockerfile
