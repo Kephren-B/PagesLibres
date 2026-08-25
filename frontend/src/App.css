@@ -1,112 +1,144 @@
-:root {
-  color-scheme: light dark;
-  font-family: system-ui, sans-serif;
-}
-
-body {
-  margin: 0;
-}
-
+/* ===== Navigation ===== */
 .nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #ccc;
+  gap: 1rem;
+  padding: 0.9rem 1.6rem;
+  background: var(--encre);
+  color: var(--papier);
+  box-shadow: var(--ombre);
 }
-
 .nav-brand {
-  font-weight: bold;
-  text-decoration: none;
-  font-size: 1.1rem;
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 1.45rem;
+  color: var(--papier);
+  letter-spacing: 0.02em;
 }
-
+.nav-brand:hover { color: var(--or); }
 .nav-links {
   display: flex;
-  gap: 1rem;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
+.nav-links a { color: var(--papier); font-weight: 500; }
+.nav-links a:hover { color: var(--or); }
+.nav-links button {
+  background: transparent;
+  border: 1px solid var(--papier);
+  padding: 0.4rem 0.9rem;
+  color: var(--papier);
+}
+.nav-links button:hover { background: var(--tampon); border-color: var(--tampon); }
 
-main {
-  max-width: 720px;
+/* ===== Page ===== */
+.page {
+  max-width: 1080px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 2rem 1.6rem 4rem;
+  text-align: left;
 }
+.page h1 { font-size: 2.2rem; }
+.page h2 { font-size: 1.5rem; margin-top: 1.4rem; }
+.page > p { max-width: 72ch; }
+.subtitle { color: var(--encre-doux); font-size: 1.05rem; margin-bottom: 1.4rem; }
 
-.page-form form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  max-width: 420px;
-}
-
-.page-form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.9rem;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  box-sizing: border-box;
-}
-
+/* ===== Listes / cartes ===== */
 .book-list,
-.exemplaire-list {
+.exemplaire-list,
+.avis-list {
   list-style: none;
+  margin: 1.2rem 0;
   padding: 0;
-}
-
-.book-list li,
-.exemplaire-list li {
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #eee;
-}
-
-.book-list a {
-  text-decoration: none;
-  color: inherit;
-}
-
-.tag {
-  margin-left: 0.5rem;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-.journal {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #ccc;
-}
-
-.error {
-  color: #b0413e;
-}
-
-.isbn-lookup {
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.book-list a {
+  display: block;
+  padding: 1.1rem 1.3rem;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-left: 5px solid var(--tampon);
+  border-radius: 10px;
+  box-shadow: var(--ombre);
+}
+.book-list a:hover { border-left-color: var(--or); transform: translateX(3px); }
+.book-list strong { font-family: var(--serif); font-size: 1.15rem; display: block; }
+.exemplaire-list li,
+.avis-list li {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  box-shadow: var(--ombre);
+}
+.avis-list li { border-left: 5px solid var(--or); }
+.commentaire-list {
+  list-style: none;
+  margin: 0.7rem 0 0;
+  padding-left: 1.1rem;
+  border-left: 2px dashed var(--bordure);
+}
+.commentaire-list li { padding: 0.35rem 0; color: var(--encre-doux); }
+.inline-form { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.inline-form input { flex: 1; }
+
+/* ===== Recherche ===== */
+.search-input { width: 100%; max-width: 420px; }
+
+/* ===== Formulaires ===== */
+.page-form { max-width: 560px; }
+.page-form form { display: flex; flex-direction: column; gap: 0.8rem; }
+.page-form label { display: flex; flex-direction: column; gap: 0.3rem; font-weight: 600; font-size: 0.92rem; }
+.isbn-lookup { display: flex; gap: 0.5rem; align-items: center; }
+.isbn-lookup input { flex: 1; }
+.couverture-preview img { max-width: 140px; border-radius: 6px; box-shadow: var(--ombre); }
+
+/* ===== Signature : tampon BCID (Jalon 2) ===== */
+.stamp {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tampon);
+  padding: 0.22rem 0.7rem;
+  border: 2px dashed var(--tampon);
+  border-radius: 6px;
+  transform: rotate(-2deg);
+  background: var(--tampon-doux);
 }
 
-.isbn-lookup input {
-  flex: 1;
+/* ===== Journal de voyage ===== */
+.journal {
+  margin-top: 1.4rem;
+  padding: 1.2rem 1.3rem;
+  background: var(--papier-fonce);
+  border-radius: 12px;
+  border: 1px solid var(--bordure);
 }
+.journal ol { padding-left: 1.3rem; }
 
-.couverture-preview {
-  max-width: 100px;
-  align-self: flex-start;
+/* ===== Feedback ===== */
+.error {
+  color: var(--tampon);
+  font-weight: 600;
+  background: var(--tampon-doux);
+  border-left: 4px solid var(--tampon);
+  padding: 0.6rem 0.9rem;
+  border-radius: 6px;
 }
+.success { color: var(--mousse); font-weight: 600; }
 
-.success {
-  color: #2e7d32;
-}
-
-.subtitle {
-  color: #666;
+/* ===== Responsive ===== */
+@media (max-width: 640px) {
+  .nav { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+  .page { padding: 1.4rem 1rem 3rem; }
 }
