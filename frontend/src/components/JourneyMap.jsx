@@ -1,11 +1,13 @@
 import L from 'leaflet'
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
-import iconUrl from 'leaflet/dist/images/marker-icon.png'
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
 
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl })
+const tamponIcon = L.divIcon({
+  className: 'tampon-marker',
+  html: '<span class="tampon-marker-dot"></span>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+  popupAnchor: [0, -12],
+})
 
 /**
  * Carte sommaire (F4/F6) : affiche des positions déjà arrondies par
@@ -28,7 +30,7 @@ export function JourneyMap({ points }) {
       />
       {polyline.length > 1 && <Polyline positions={polyline} />}
       {points.map((p, i) => (
-        <Marker key={i} position={[p.lat, p.lon]}>
+        <Marker key={i} position={[p.lat, p.lon]} icon={tamponIcon}>
           <Popup>{p.label}</Popup>
         </Marker>
       ))}

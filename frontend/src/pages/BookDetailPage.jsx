@@ -11,6 +11,11 @@ const STATUTS = {
   retire: 'Retiré',
 }
 
+const LABELS_MOUVEMENT = {
+  liberation: 'Libéré',
+  trouvaille: 'Trouvé',
+}
+
 export function BookDetailPage() {
   const { id } = useParams()
   const { isAuthenticated } = useAuth()
@@ -165,13 +170,36 @@ export function BookDetailPage() {
         <div className="journal">
           <h3>Journal de voyage — <span className="stamp">{selectedExemplaire.codeBcid}</span></h3>
           <JourneyMap points={journeyPoints} />
-          <ol>
+          <ol className="timeline">
             {selectedExemplaire.mouvements.map((m, i) => (
-              <li key={i}>
-                {m.typeMouvement} — {new Date(m.dateMouvement).toLocaleString('fr-FR')}
-                {m.message && <> — « {m.message} »</>}
+              <li key={i} className="timeline-step">
+                <span className="timeline-dot" />
+                <div className="timeline-content">
+                  <span className="timeline-label">
+                    {LABELS_MOUVEMENT[m.typeMouvement] ?? m.typeMouvement}
+                    {m.utilisateur?.pseudo && <> par {m.utilisateur.pseudo}</>}
+                  </span>
+                  <span className="timeline-date">{new Date(m.dateMouvement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  {m.message && <p className="timeline-message">« {m.message} »</p>}
+                </div>
               </li>
             ))}
+            {selectedExemplaire.statut === 'trouve' && (
+              <li className="timeline-step timeline-step-pending">
+                <span className="timeline-dot timeline-dot-pending" />
+                <div className="timeline-content">
+                  <span className="timeline-label">En attente d'une nouvelle libération…</span>
+                </div>
+              </li>
+            )}
+            {selectedExemplaire.statut === 'en_circulation' && (
+              <li className="timeline-step timeline-step-pending">
+                <span className="timeline-dot timeline-dot-pending" />
+                <div className="timeline-content">
+                  <span className="timeline-label">En attente d'une nouvelle trouvaille…</span>
+                </div>
+              </li>
+            )}
           </ol>
         </div>
       )}

@@ -12,6 +12,7 @@ export function Nav() {
         <Link to="/">Livres</Link>
         {isAuthenticated && <Link to="/livres/nouveau">Ajouter un livre</Link>}
         {isAuthenticated && <Link to="/trouvaille">Déclarer une trouvaille</Link>}
+        {isAuthenticated && <Link to="/profil">Mon profil</Link>}
         {isAuthenticated ? (
           <button
             type="button"
