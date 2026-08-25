@@ -89,6 +89,20 @@ main {
   color: #b0413e;
 }
 
+.isbn-lookup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.isbn-lookup input {
+  flex: 1;
+}
+
+.couverture-preview {
+  max-width: 100px;
+  align-self: flex-start;
+}
+
 .success {
   color: #2e7d32;
 }

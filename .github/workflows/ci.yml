@@ -91,3 +91,35 @@ jobs:
 
       - name: Exécuter la suite PHPUnit
         run: php bin/phpunit
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Exécuter la suite de tests front (Vitest)
+        run: pnpm test
