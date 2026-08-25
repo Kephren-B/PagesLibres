@@ -77,6 +77,15 @@ Un admin peut alors consulter/traiter les signalements (back-office F10).
 > Note CSP : `style-src 'unsafe-inline'` est requis par Leaflet (styles inline
 > sur marqueurs/tuiles). Pas de `unsafe-eval`, pas de `unsafe-inline` sur
 > `script-src`.
+>
+> `connect-src` liste explicitement l'origine de l'API (`http://localhost:8090`
+> par défaut) : `'self'` seul ne couvre pas un appel cross-origin front→API.
+> Bug réel rencontré lors de la vérification en conditions réelles (stack
+> lancée depuis les images publiées) : sans cette entrée, la CSP bloquait
+> silencieusement tous les appels API et la liste de livres restait vide.
+> Si `VITE_API_URL` change pour un déploiement donné, `frontend/nginx.conf`
+> doit être mis à jour en conséquence (pas de templating dynamique pour
+> l'instant — limitation connue, acceptable pour ce projet).
 
 ---
 
