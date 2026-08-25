@@ -152,7 +152,7 @@ export function BookDetailPage() {
       <ul className="exemplaire-list">
         {exemplaires.map((exemplaire) => (
           <li key={exemplaire.idExemplaire}>
-            <code>{exemplaire.codeBcid}</code> — {STATUTS[exemplaire.statut] ?? exemplaire.statut}
+            <code className="stamp">{exemplaire.codeBcid}</code> — {STATUTS[exemplaire.statut] ?? exemplaire.statut}
             <button type="button" onClick={() => handleOuvrirJournal(exemplaire.idExemplaire)}>
               Voir le journal de voyage
             </button>
@@ -163,7 +163,7 @@ export function BookDetailPage() {
 
       {selectedExemplaire && (
         <div className="journal">
-          <h3>Journal de voyage — {selectedExemplaire.codeBcid}</h3>
+          <h3>Journal de voyage — <span className="stamp">{selectedExemplaire.codeBcid}</span></h3>
           <JourneyMap points={journeyPoints} />
           <ol>
             {selectedExemplaire.mouvements.map((m, i) => (
