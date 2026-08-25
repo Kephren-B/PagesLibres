@@ -26,7 +26,10 @@ RUN mkdir -p var/cache var/log /run/nginx \
     && chown -R www-data:www-data var /run/nginx
 
 # nginx sert l'API (port 80) ; php-fpm écoute en local (127.0.0.1:9000).
-COPY docker/nginx/nginx-prod.conf /etc/nginx/conf.d/default.conf
+# Alpine nginx inclut les blocs "server" depuis /etc/nginx/http.d (pas conf.d) ;
+# on écrase le default.conf livré par le paquet pour qu'aucun serveur par
+# défaut ne prenne le dessus sur le nôtre.
+COPY docker/nginx/nginx-prod.conf /etc/nginx/http.d/default.conf
 COPY docker/entrypoint-prod.sh /usr/local/bin/entrypoint-prod
 RUN chmod +x /usr/local/bin/entrypoint-prod
 

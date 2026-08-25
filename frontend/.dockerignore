@@ -1,0 +1,10 @@
+# Jamais embarqué : dépendances, build local, secrets (clé Google Books locale).
+node_modules/
+dist/
+.pnpm-store/
+.env
+.env.*
+!.env.example
+.git/
+.dockerignore
+Dockerfile
