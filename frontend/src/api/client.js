@@ -31,6 +31,12 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
   const data = text ? JSON.parse(text) : null
 
   if (!response.ok) {
+    // JWT expiré/invalide sur une requête authentifiée : on déconnecte
+    // proprement (au lieu d'afficher l'erreur brute "Expired JWT Token").
+    if (response.status === 401 && auth) {
+      setToken(null)
+      window.dispatchEvent(new CustomEvent('auth-expired'))
+    }
     const violations = data?.violations?.map((v) => v.message).join(' ')
     const message = violations || data?.detail || data?.message || `Erreur ${response.status}`
     throw new Error(message)
