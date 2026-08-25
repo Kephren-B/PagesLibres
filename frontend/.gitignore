@@ -13,6 +13,9 @@ dist
 dist-ssr
 *.local
 
+# Contient VITE_GOOGLE_BOOKS_API_KEY réelle en local : jamais commité.
+.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
