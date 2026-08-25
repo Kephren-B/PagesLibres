@@ -124,7 +124,161 @@
   border-radius: 12px;
   border: 1px solid var(--bordure);
 }
-.journal ol { padding-left: 1.3rem; }
+
+/* ===== Frise chronologique (journal de voyage) ===== */
+.timeline {
+  list-style: none;
+  margin: 1.2rem 0 0;
+  padding: 0 0 0 0.4rem;
+  position: relative;
+}
+.timeline-step {
+  position: relative;
+  padding: 0 0 1.4rem 1.6rem;
+  border-left: 2px solid var(--bordure);
+}
+.timeline-step:last-child { border-left-color: transparent; padding-bottom: 0; }
+.timeline-dot {
+  position: absolute;
+  left: -8px;
+  top: 0.2rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--mousse);
+  border: 3px solid var(--papier-fonce);
+  box-shadow: 0 0 0 2px var(--mousse);
+}
+.timeline-dot-pending {
+  background: var(--papier-fonce);
+  box-shadow: 0 0 0 2px var(--bordure);
+}
+.timeline-content { display: flex; flex-direction: column; gap: 0.15rem; }
+.timeline-label { font-weight: 700; }
+.timeline-date { color: var(--encre-doux); font-size: 0.88rem; }
+.timeline-message {
+  margin: 0.4rem 0 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--blanc);
+  border-radius: 8px;
+  border: 1px solid var(--bordure);
+  font-style: italic;
+  color: var(--encre-doux);
+}
+.timeline-step-pending .timeline-label { color: var(--encre-faible); font-weight: 500; font-style: italic; }
+
+/* ===== Carte d'accueil (F4) ===== */
+.home-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.rayon-picker { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--encre-doux); }
+.rayon-btn {
+  background: var(--blanc);
+  color: var(--encre);
+  border: 1px solid var(--bordure);
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+}
+.rayon-btn:hover { opacity: 1; border-color: var(--tampon); }
+.rayon-btn.active { background: var(--encre); color: var(--papier); border-color: var(--encre); }
+.home-map-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--bordure);
+  box-shadow: var(--ombre);
+}
+.home-map { z-index: 0; }
+.map-caption { margin: 0.6rem 0 0; font-size: 0.85rem; color: var(--encre-doux); }
+.map-popup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 160px; }
+.map-popup-title { font-family: var(--serif); font-size: 1rem; }
+.map-popup-auteur { color: var(--encre-doux); font-size: 0.85rem; }
+.map-popup-link {
+  margin-top: 0.2rem;
+  font-weight: 700;
+  color: var(--tampon);
+}
+.stamp-small { font-size: 0.7rem; padding: 0.1rem 0.5rem; }
+
+.tampon-marker-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--tampon);
+  border: 3px solid var(--papier);
+  box-shadow: 0 0 0 2px var(--tampon), 0 3px 6px rgba(30, 58, 52, 0.35);
+}
+
+/* ===== Profil / badges (F9) ===== */
+.badge-list {
+  list-style: none;
+  margin: 1rem 0 1.6rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.9rem;
+}
+.badge-card {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-top: 4px solid var(--or);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  box-shadow: var(--ombre);
+}
+.badge-card strong { font-family: var(--serif); font-size: 1.05rem; }
+.badge-card p { margin: 0.2rem 0; color: var(--encre-doux); font-size: 0.9rem; }
+.badge-date { font-size: 0.78rem; color: var(--encre-faible); }
+.badge-icon {
+  flex-shrink: 0;
+  width: 2.4rem;
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--or-doux);
+  color: var(--or);
+  font-size: 1.2rem;
+}
+
+.history-list {
+  list-style: none;
+  margin: 1rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+}
+.history-date { color: var(--encre-doux); font-size: 0.9rem; }
+.history-tag {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  color: var(--blanc);
+}
+.history-tag-liberation { background: var(--tampon); }
+.history-tag-trouvaille { background: var(--mousse); }
 
 /* ===== Feedback ===== */
 .error {

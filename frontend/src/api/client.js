@@ -60,4 +60,8 @@ export const api = {
 
   proximite: (lat, lon, rayon = 5000) =>
     request(`/api/exemplaires/proximite?lat=${lat}&lon=${lon}&rayon=${rayon}`, { auth: true }),
+
+  getMoi: () => request('/api/moi', { auth: true }),
+  listMesMouvements: (utilisateurIri) => request(`/api/mouvements?utilisateur=${utilisateurIri}`, { auth: true }),
+  listMesBadges: (utilisateurIri) => request(`/api/obtention_badges?utilisateur=${utilisateurIri}`, { auth: true }),
 }
