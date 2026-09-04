@@ -7,6 +7,7 @@ import { BookDetailPage } from './pages/BookDetailPage'
 import { DeclareTrouvaillePage } from './pages/DeclareTrouvaillePage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { ProfilePage } from './pages/ProfilePage'
 import './App.css'
 
 function RequireAuth({ children }) {
@@ -37,6 +38,14 @@ function AppRoutes() {
             element={
               <RequireAuth>
                 <DeclareTrouvaillePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/profil"
+            element={
+              <RequireAuth>
+                <ProfilePage />
               </RequireAuth>
             }
           />

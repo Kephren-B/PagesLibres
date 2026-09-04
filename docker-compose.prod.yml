@@ -1,0 +1,65 @@
+# docker-compose de PRODUCTION — consomme les images publiées sur Docker Hub
+# (kbib/pageslibres-backend et kbib/pageslibres-frontend), aucun build local.
+#
+# Le jury peut lancer l'application complète avec :
+#   cp .env.prod.example .env.prod
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+# Puis : front → http://localhost:5173   ·   API → http://localhost:8090/api
+
+services:
+  database:
+    image: postgis/postgis:18-3.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db_data_prod:/var/lib/postgresql
+      # Le schéma (MPD Jalon 3) est fourni par le conteneur mpd-init : le jury
+      # n'a pas besoin du code source.
+      - mpd_sql_prod:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      mpd-init:
+        condition: service_completed_successfully
+
+  # Copie le MPD embarqué dans l'image backend vers le volume d'init SQL.
+  mpd-init:
+    image: kbib/pageslibres-backend:${TAG:-latest}
+    restart: "no"
+    volumes:
+      - mpd_sql_prod:/sql
+    entrypoint: ["sh", "-c", "cp /var/www/html/docker/postgres/init/001_mpd.sql /sql/001_mpd.sql"]
+
+  backend:
+    image: kbib/pageslibres-backend:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET}
+      DEFAULT_URI: ${DEFAULT_URI}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}?serverVersion=18&charset=utf8
+      CORS_ALLOW_ORIGIN: ${CORS_ALLOW_ORIGIN}
+      JWT_SECRET_KEY: /var/www/html/config/jwt/private.pem
+      JWT_PUBLIC_KEY: /var/www/html/config/jwt/public.pem
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE}
+    ports:
+      - "8090:80"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    image: kbib/pageslibres-frontend:${TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+
+volumes:
+  db_data_prod:
+  mpd_sql_prod:
