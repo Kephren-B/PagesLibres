@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\State\CommentaireProcessor;
 use App\Validator\ExactlyOneTarget;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -19,19 +27,32 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ORM\Table(name: 'commentaire')]
 #[ExactlyOneTarget(fields: ['avis', 'livre'], message: 'Un commentaire doit cibler exactement un avis OU une fiche livre, jamais les deux ni aucun des deux.')]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(processor: CommentaireProcessor::class, security: "is_granted('ROLE_USER')"),
+    ],
+    normalizationContext: ['groups' => ['commentaire:read']],
+    denormalizationContext: ['groups' => ['commentaire:write']],
+)]
+#[ApiFilter(SearchFilter::class, properties: ['avis' => 'exact', 'livre' => 'exact'])]
 class Commentaire
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'id_commentaire', type: Types::INTEGER)]
+    #[Groups(['commentaire:read'])]
     private ?int $idCommentaire = null;
 
     #[ORM\ManyToOne(targetEntity: Avis::class, inversedBy: 'commentaires')]
     #[ORM\JoinColumn(name: 'id_avis', referencedColumnName: 'id_avis', nullable: true, onDelete: 'CASCADE')]
+    #[Groups(['commentaire:read', 'commentaire:write'])]
     private ?Avis $avis = null;
 
     #[ORM\ManyToOne(targetEntity: Livre::class)]
     #[ORM\JoinColumn(name: 'id_livre', referencedColumnName: 'id_livre', nullable: true, onDelete: 'CASCADE')]
+    #[Groups(['commentaire:read', 'commentaire:write'])]
     private ?Livre $livre = null;
 
     /**
@@ -40,13 +61,16 @@ class Commentaire
      */
     #[ORM\ManyToOne(targetEntity: Utilisateur::class)]
     #[ORM\JoinColumn(name: 'id_utilisateur', referencedColumnName: 'id_utilisateur', nullable: true, onDelete: 'SET NULL')]
+    #[Groups(['commentaire:read'])]
     private ?Utilisateur $utilisateur = null;
 
     #[ORM\Column(name: 'contenu', type: Types::TEXT)]
     #[Assert\NotBlank]
+    #[Groups(['commentaire:read', 'commentaire:write'])]
     private string $contenu;
 
     #[ORM\Column(name: 'date_creation', type: Types::DATETIME_IMMUTABLE)]
+    #[Groups(['commentaire:read'])]
     private \DateTimeImmutable $dateCreation;
 
     public function __construct()

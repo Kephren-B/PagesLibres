@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      database:
+        image: postgis/postgis:18-3.6
+        env:
+          POSTGRES_DB: pageslibres_test
+          POSTGRES_USER: pageslibres
+          POSTGRES_PASSWORD: pageslibres_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pageslibres -d pageslibres_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      APP_ENV: test
+      APP_SECRET: ci-secret-not-for-production
+      # Base racine : Doctrine ajoute le suffixe _test (config doctrine.yaml
+      # when@test) → connexion à "pageslibres_test", la base créée par le
+      # service Postgres et chargée avec le MPD.
+      DATABASE_URL: "postgresql://pageslibres:pageslibres_ci@127.0.0.1:5432/pageslibres?serverVersion=18&charset=utf8"
+      JWT_SECRET_KEY: "%kernel.project_dir%/config/jwt/private.pem"
+      JWT_PUBLIC_KEY: "%kernel.project_dir%/config/jwt/public.pem"
+      JWT_PASSPHRASE: ci-passphrase-not-for-production
+      CORS_ALLOW_ORIGIN: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql, intl, zip
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+
+      # Symfony exige un fichier .env au boot (post-install cache:clear),
+      # mais il est gitignoré : on en crée un depuis l'exemple. Les vraies
+      # valeurs (APP_ENV, DATABASE_URL, JWT_*, APP_SECRET) sont injectées par
+      # le job et priment sur le .env.
+      - name: Préparer l'environnement (.env)
+        run: cp .env.example .env
+
+      - name: Installer les dépendances
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Générer la paire de clés JWT (usage CI uniquement)
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+
+      - name: Charger le MPD validé (source de vérité du schéma)
+        run: |
+          sudo apt-get update -yqq && sudo apt-get install -yqq postgresql-client
+          PGPASSWORD=pageslibres_ci psql -h 127.0.0.1 -U pageslibres -d pageslibres_test \
+            -f docker/postgres/init/001_mpd.sql
+
+      # Le schéma vient de 001_mpd.sql (pas de doctrine:schema:update), mais
+      # les données de référence (5 badges F9) sont portées par une vraie
+      # migration Doctrine : on marque la baseline no-op comme déjà exécutée
+      # puis on applique le reste (seed des badges).
+      - name: Appliquer les migrations de données (seed badges)
+        run: |
+          php bin/console doctrine:migrations:sync-metadata-storage --no-interaction
+          php bin/console doctrine:migrations:version --add --no-interaction 'DoctrineMigrations\Version20260824102256'
+          php bin/console doctrine:migrations:migrate --no-interaction
+
+      - name: Lint du conteneur de services
+        run: php bin/console lint:container --env=test
+
+      - name: Exécuter la suite PHPUnit
+        run: php bin/phpunit
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Cache pnpm
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Exécuter la suite de tests front (Vitest)
+        run: pnpm test

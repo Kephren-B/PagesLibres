@@ -18,10 +18,18 @@ doctrine:
         types:
             geography:
                 class: 'Jsor\Doctrine\PostGIS\Types\GeographyType'
-                commented: false
             geometry:
                 class: 'Jsor\Doctrine\PostGIS\Types\GeometryType'
-                commented: false
+
+        # Les 4 CREATE TYPE ... AS ENUM du MPD ne sont pas reconnus par
+        # l'introspection DBAL (types PostgreSQL natifs) : on les fait
+        # correspondre à "string", cohérent avec le mapping des entités
+        # (Types::STRING + enumType PHP côté ORM).
+        mapping_types:
+            role_utilisateur: string
+            statut_exemplaire: string
+            type_mouvement: string
+            statut_signalement: string
     orm:
         validate_xml_mapping: true
         naming_strategy: doctrine.orm.naming_strategy.underscore
