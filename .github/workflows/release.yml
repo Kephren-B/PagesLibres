@@ -39,7 +39,15 @@ jobs:
           context: ./frontend
           file: ./frontend/Dockerfile
           push: true
-          build-args: VITE_API_URL=http://localhost:8090
+          # La clé Google Books est publique par nature : une clé utilisée côté
+          # client se retrouve nécessairement dans le bundle livré au navigateur
+          # (cf. § 13.c.3 du dossier de projet). Le secret GitHub évite seulement
+          # de la committer ; la protection réelle est la restriction par référent
+          # HTTP dans la console Google. Un secret absent donne une valeur vide :
+          # l'appel retombe alors sur le quota anonyme.
+          build-args: |
+            VITE_API_URL=http://localhost:8090
+            VITE_GOOGLE_BOOKS_API_KEY=${{ secrets.VITE_GOOGLE_BOOKS_API_KEY }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/pageslibres-frontend:${{ github.ref_name }}
             ${{ secrets.DOCKERHUB_USERNAME }}/pageslibres-frontend:latest
