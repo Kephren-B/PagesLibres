@@ -43,6 +43,8 @@ docker-compose.yml
 
 ## Démarrage local
 
+> Procédure pas-à-pas, vérifications et dépannage : [`DEMARRAGE.md`](../DEMARRAGE.md).
+
 ```bash
 cp .env.example .env                    # ajuster les secrets locaux si besoin
 cp backend/.env.example backend/.env    # puis générer un vrai APP_SECRET
