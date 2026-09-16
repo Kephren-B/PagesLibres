@@ -70,6 +70,22 @@
 }
 .book-list a:hover { border-left-color: var(--or); transform: translateX(3px); }
 .book-list strong { font-family: var(--serif); font-size: 1.15rem; display: block; }
+/* Puce de catégorie (catalogue). Sans cette règle, le <span class="tag"> de
+   BooksPage.jsx s'affichait en texte brut, collé au nom de l'auteur. */
+.tag {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.12rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--encre);
+  background: rgba(107, 143, 113, 0.18);
+  border: 1px solid var(--mousse);
+  border-radius: 999px;
+  vertical-align: middle;
+}
 .exemplaire-list li,
 .avis-list li {
   background: var(--blanc);
@@ -290,6 +306,67 @@
   border-radius: 6px;
 }
 .success { color: var(--mousse); font-weight: 600; }
+
+/* ===== Back-office : modération des signalements (F10) ===== */
+.modo-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 1.2rem; }
+.modo-tab {
+  background: var(--blanc);
+  color: var(--encre);
+  border: 1px solid var(--bordure);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+}
+.modo-tab.active { background: var(--encre); color: var(--papier); border-color: var(--encre); }
+
+.modo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.modo-card {
+  background: var(--blanc);
+  border: 1px solid var(--bordure);
+  border-left: 5px solid var(--or);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  box-shadow: var(--ombre);
+}
+.modo-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.modo-type {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+  color: var(--blanc);
+}
+.modo-type-exemplaire { background: var(--tampon); }
+.modo-type-livre { background: var(--encre); }
+.modo-type-avis { background: var(--or); }
+.modo-type-commentaire { background: var(--mousse); }
+.modo-type-inconnu { background: var(--encre-faible); }
+.modo-chip {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.18rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--bordure);
+}
+.modo-chip-en_attente { color: var(--or); background: var(--or-doux); border-color: transparent; }
+.modo-chip-traite { color: var(--mousse); background: rgba(107, 143, 113, 0.14); border-color: transparent; }
+.modo-chip-rejete { color: var(--tampon); background: var(--tampon-doux); border-color: transparent; }
+.modo-cible { font-family: var(--serif); font-weight: 700; margin: 0.7rem 0 0.2rem; }
+.modo-motif { margin: 0 0 0.5rem; color: var(--encre-doux); font-style: italic; }
+.modo-meta { margin: 0; font-size: 0.85rem; color: var(--encre-doux); }
+.modo-meta strong { color: var(--encre); }
+.modo-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
+.modo-actions .btn-ok { background: var(--mousse); }
+.modo-actions .btn-non { background: var(--tampon); }
 
 /* ===== Responsive ===== */
 @media (max-width: 640px) {

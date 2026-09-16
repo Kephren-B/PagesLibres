@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export function Nav() {
-  const { isAuthenticated, logout } = useAuth()
+  const { isAuthenticated, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   return (
@@ -13,6 +13,7 @@ export function Nav() {
         {isAuthenticated && <Link to="/livres/nouveau">Ajouter un livre</Link>}
         {isAuthenticated && <Link to="/trouvaille">Déclarer une trouvaille</Link>}
         {isAuthenticated && <Link to="/profil">Mon profil</Link>}
+        {isAdmin && <Link to="/admin/signalements">Modération</Link>}
         {isAuthenticated ? (
           <button
             type="button"
