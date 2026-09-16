@@ -70,6 +70,22 @@
 }
 .book-list a:hover { border-left-color: var(--or); transform: translateX(3px); }
 .book-list strong { font-family: var(--serif); font-size: 1.15rem; display: block; }
+/* Puce de catégorie (catalogue). Sans cette règle, le <span class="tag"> de
+   BooksPage.jsx s'affichait en texte brut, collé au nom de l'auteur. */
+.tag {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.12rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--encre);
+  background: rgba(107, 143, 113, 0.18);
+  border: 1px solid var(--mousse);
+  border-radius: 999px;
+  vertical-align: middle;
+}
 .exemplaire-list li,
 .avis-list li {
   background: var(--blanc);
