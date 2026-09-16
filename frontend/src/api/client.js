@@ -70,4 +70,11 @@ export const api = {
   getMoi: () => request('/api/moi', { auth: true }),
   listMesMouvements: (utilisateurIri) => request(`/api/mouvements?utilisateur=${utilisateurIri}`, { auth: true }),
   listMesBadges: (utilisateurIri) => request(`/api/obtention_badges?utilisateur=${utilisateurIri}`, { auth: true }),
+
+  // F10 — modération (back-office, admin)
+  getAvis: (id) => request(`/api/avis/${id}`),
+  getCommentaire: (id) => request(`/api/commentaires/${id}`),
+  listSignalements: (query = '') => request(`/api/signalements${query}`, { auth: true }),
+  traiterSignalement: (id) => request(`/api/signalements/${id}/traiter`, { method: 'POST', auth: true }),
+  rejeterSignalement: (id) => request(`/api/signalements/${id}/rejeter`, { method: 'POST', auth: true }),
 }

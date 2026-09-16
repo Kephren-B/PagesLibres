@@ -8,11 +8,21 @@ import { DeclareTrouvaillePage } from './pages/DeclareTrouvaillePage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { ModerationPage } from './pages/ModerationPage'
 import './App.css'
 
 function RequireAuth({ children }) {
   const { isAuthenticated } = useAuth()
   return isAuthenticated ? children : <Navigate to="/connexion" replace />
+}
+
+// Back-office : accessible uniquement après chargement du rôle admin.
+function RequireAdmin({ children }) {
+  const { isAuthenticated, isAdmin, user } = useAuth()
+  if (!isAuthenticated) return <Navigate to="/connexion" replace />
+  if (user === null) return <div className="page"><p>Chargement…</p></div>
+  if (!isAdmin) return <Navigate to="/" replace />
+  return children
 }
 
 function AppRoutes() {
@@ -47,6 +57,14 @@ function AppRoutes() {
               <RequireAuth>
                 <ProfilePage />
               </RequireAuth>
+            }
+          />
+          <Route
+            path="/admin/signalements"
+            element={
+              <RequireAdmin>
+                <ModerationPage />
+              </RequireAdmin>
             }
           />
         </Routes>

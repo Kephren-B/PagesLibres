@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { getToken, setToken as persistToken } from '../api/client'
+import { api, getToken, setToken as persistToken } from '../api/client'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(() => getToken())
+  const [user, setUser] = useState(null)
 
   const login = useCallback((newToken) => {
     persistToken(newToken)
@@ -15,6 +16,21 @@ export function AuthProvider({ children }) {
     persistToken(null)
     setTokenState(null)
   }, [])
+
+  // Chargement du profil courant (rôle) dès qu'un jeton est présent :
+  // permet de n'afficher le back-office qu'aux administrateurs.
+  useEffect(() => {
+    if (!token) {
+      setUser(null)
+      return
+    }
+    let cancelled = false
+    api
+      .getMoi()
+      .then((moi) => { if (!cancelled) setUser(moi) })
+      .catch(() => { if (!cancelled) setUser(null) })
+    return () => { cancelled = true }
+  }, [token])
 
   // Si le JWT expire pendant l'utilisation (événement émis par le client API
   // sur un 401), on déconnecte et on ramène l'utilisateur à la connexion.
@@ -27,8 +43,10 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth-expired', handleExpired)
   }, [logout])
 
+  const isAdmin = user?.role === 'admin'
+
   return (
-    <AuthContext.Provider value={{ token, isAuthenticated: Boolean(token), login, logout }}>
+    <AuthContext.Provider value={{ token, user, isAuthenticated: Boolean(token), isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
