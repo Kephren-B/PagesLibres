@@ -2,10 +2,20 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api, requeteLivres } from '../api/client'
 import { HomeMap } from '../components/HomeMap'
+import {
+  IconeChevron,
+  IconeCible,
+  IconeCroix,
+  IconeEpingle,
+  IconeEtiquette,
+  IconeLoupe,
+  IconeOeil,
+} from '../components/Icones'
 
 const PARIS = { lat: 48.8566, lon: 2.3522 }
 const RAYONS = [1000, 5000, 20000, 50000]
 const LIVRES_PAR_PAGE = 6
+const TEMPORISATION_SAISIE = 300
 
 // F8 : filtre de statut des exemplaires. « En lecture » correspond au statut
 // `trouve` — l'exemplaire est détenu par son dernier découvreur (cf. dossier § III).
@@ -17,6 +27,7 @@ const STATUTS = [
 
 export function BooksPage() {
   const [livres, setLivres] = useState([])
+  const [recherche, setRecherche] = useState('')
   const [titre, setTitre] = useState('')
   const [categorie, setCategorie] = useState('')
   const [categories, setCategories] = useState([])
@@ -30,9 +41,19 @@ export function BooksPage() {
   const [markers, setMarkers] = useState([])
   const [mapError, setMapError] = useState(null)
 
-  // Changer de recherche ou de catégorie repart de la première page de résultats.
-  function filtrerCatalogue(prochainTitre, prochaineCategorie) {
-    setTitre(prochainTitre)
+  // Temporisation de la saisie : sans elle, chaque frappe déclenchait une requête
+  // et faisait clignoter le catalogue.
+  useEffect(() => {
+    const minuteur = setTimeout(() => {
+      setTitre(recherche)
+      setLimite(LIVRES_PAR_PAGE)
+    }, TEMPORISATION_SAISIE)
+
+    return () => clearTimeout(minuteur)
+  }, [recherche])
+
+  // Changer de catégorie repart de la première page de résultats.
+  function filtrerCategorie(prochaineCategorie) {
     setCategorie(prochaineCategorie)
     setLimite(LIVRES_PAR_PAGE)
   }
@@ -103,76 +124,109 @@ export function BooksPage() {
       <h1>Livres à proximité</h1>
       <p className="subtitle">Explorez la carte ou cherchez un titre précis.</p>
 
-      <div className="home-controls">
-        <input
-          type="search"
-          placeholder="Rechercher par titre…"
-          value={titre}
-          onChange={(e) => filtrerCatalogue(e.target.value, categorie)}
-          className="search-input"
-        />
-        <div className="rayon-picker">
-          <span>Catégorie</span>
-          <button
-            type="button"
-            className={categorie === '' ? 'rayon-btn active' : 'rayon-btn'}
-            onClick={() => filtrerCatalogue(titre, '')}
-          >
-            Toutes
-          </button>
-          {categories.map((c) => (
+      <section className="filtres" aria-label="Filtres de recherche">
+        <div className="filtre-recherche">
+          <IconeLoupe />
+          <label htmlFor="recherche-titre" className="sr-only">
+            Rechercher un livre par titre
+          </label>
+          <input
+            id="recherche-titre"
+            type="search"
+            placeholder="Rechercher un titre…"
+            value={recherche}
+            onChange={(e) => setRecherche(e.target.value)}
+          />
+          {recherche !== '' && (
             <button
-              key={c}
               type="button"
-              className={c === categorie ? 'rayon-btn active' : 'rayon-btn'}
-              onClick={() => filtrerCatalogue(titre, c === categorie ? '' : c)}
+              className="filtre-effacer"
+              onClick={() => setRecherche('')}
+              aria-label="Effacer la recherche"
             >
-              {c}
+              <IconeCroix />
             </button>
-          ))}
+          )}
         </div>
-      </div>
 
-      <div className="home-controls">
-        <div className="rayon-picker">
-          <span>Rayon</span>
-          {RAYONS.map((r) => (
-            <button
-              key={r}
-              type="button"
-              className={r === rayon ? 'rayon-btn active' : 'rayon-btn'}
-              onClick={() => setRayon(r)}
-            >
-              {r >= 1000 ? `${r / 1000} km` : `${r} m`}
-            </button>
-          ))}
+        <div className="filtre-groupe">
+          <label className="filtre-libelle" htmlFor="filtre-categorie">
+            <IconeEtiquette />
+            Catégorie
+          </label>
+          {/* Liste ouverte (elle grandit avec le catalogue) : un select natif est
+              plus compact en mobile que sept pastilles, et reste accessible
+              (libellé associé, clavier, lecteur d'écran). */}
+          <select
+            id="filtre-categorie"
+            className="filtre-select"
+            value={categorie}
+            onChange={(e) => filtrerCategorie(e.target.value)}
+          >
+            <option value="">Toutes les catégories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="rayon-picker">
-          <span>Exemplaires</span>
-          {STATUTS.map((s) => (
-            <button
-              key={s.valeur || 'tous'}
-              type="button"
-              className={s.valeur === statut ? 'rayon-btn active' : 'rayon-btn'}
-              onClick={() => setStatut(s.valeur)}
-              title={
-                s.valeur === 'trouve'
-                  ? 'Exemplaires en lecture : détenus par leur dernier découvreur'
-                  : undefined
-              }
-            >
-              {s.libelle}
-            </button>
-          ))}
+
+        <div className="filtre-groupe">
+          <span className="filtre-libelle" id="filtre-rayon">
+            <IconeCible />
+            Rayon
+          </span>
+          <div className="filtre-valeurs" role="group" aria-labelledby="filtre-rayon">
+            {RAYONS.map((r) => (
+              <button
+                key={r}
+                type="button"
+                className="pastille"
+                aria-pressed={r === rayon}
+                onClick={() => setRayon(r)}
+              >
+                {r >= 1000 ? `${r / 1000} km` : `${r} m`}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+
+        <div className="filtre-groupe">
+          <span className="filtre-libelle" id="filtre-statut">
+            <IconeOeil />
+            Exemplaires
+          </span>
+          <div className="filtre-valeurs" role="group" aria-labelledby="filtre-statut">
+            {STATUTS.map((s) => (
+              <button
+                key={s.valeur || 'tous'}
+                type="button"
+                className="pastille"
+                aria-pressed={s.valeur === statut}
+                onClick={() => setStatut(s.valeur)}
+                title={
+                  s.valeur === 'trouve'
+                    ? 'Exemplaires en lecture : détenus par leur dernier découvreur'
+                    : undefined
+                }
+              >
+                {s.libelle}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {mapError && <p className="error">{mapError}</p>}
       {position && (
         <div className="home-map-wrap">
           <HomeMap center={[position.lat, position.lon]} markers={markers} />
           <p className="map-caption">
-            {markers.length === 0 ? 'Aucun exemplaire à proximité pour ce rayon.' : `${markers.length} exemplaire(s) à proximité.`}
+            <IconeEpingle />
+            {markers.length === 0
+              ? 'Aucun exemplaire à proximité pour ce rayon.'
+              : `${markers.length} exemplaire(s) à proximité.`}
           </p>
         </div>
       )}
@@ -192,7 +246,7 @@ export function BooksPage() {
               <button
                 type="button"
                 className="tag"
-                onClick={() => filtrerCatalogue(titre, livre.categorie)}
+                onClick={() => filtrerCategorie(livre.categorie)}
                 title={`Filtrer sur la catégorie ${livre.categorie}`}
               >
                 {livre.categorie}
@@ -208,6 +262,7 @@ export function BooksPage() {
       {!loading && livres.length === limite && (
         <button type="button" className="voir-plus" onClick={() => setLimite(limite + LIVRES_PAR_PAGE)}>
           Voir plus de livres
+          <IconeChevron />
         </button>
       )}
     </div>

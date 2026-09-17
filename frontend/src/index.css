@@ -160,6 +160,15 @@ input:focus, textarea:focus, select:focus {
   outline-offset: 1px;
 }
 
+/* La légende d'un champ est du texte : elle doit passer le seuil AA comme le
+   reste. Le gris par défaut du navigateur tombait à 3,1:1 en thème sombre.
+   `opacity: 1` est nécessaire, Firefox atténuant les légendes par défaut. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--encre-doux);
+  opacity: 1;
+}
+
 code {
   font-family: var(--mono);
 }
