@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet'
 import { BoutonPleinEcran, RecalculTaille } from './BoutonPleinEcran'
+import { TYPES_MOUVEMENT, marqueurMouvement } from './Icones'
 import { cadenceEtapes, mouvementReduit } from '../etapes'
 
 // Une icône par étiquette, construite une fois : Leaflet en recrée une par
@@ -9,25 +10,31 @@ import { cadenceEtapes, mouvementReduit } from '../etapes'
 const icones = new Map()
 
 /**
- * Pastille numérotée (« 3 · L2 »). L'étiquette ne contient que des chiffres et
- * une lettre fixe, calculés à partir du rang du mouvement : aucune donnée
- * saisie par un utilisateur n'entre dans ce HTML.
+ * Pastille d'étape : l'icône du type, puis le rang. Le détail (« 3 · L2 »)
+ * reste dans l'infobulle, où il y a la place de l'écrire.
+ *
+ * Le HTML ne contient que des éléments écrits ici — un tracé d'icône fixe, un
+ * rang calculé, et un type validé contre la liste connue (le type vient de
+ * l'API, on ne l'injecte pas tel quel). Aucune donnée saisie par un
+ * utilisateur n'entre dans cette chaîne.
  */
-function iconeEtape(etiquette) {
-  if (!icones.has(etiquette)) {
+function iconeEtape(type, rang) {
+  const cle = `${type}-${rang}`
+  if (!icones.has(cle)) {
+    const typeSûr = TYPES_MOUVEMENT.includes(type) ? type : ''
     icones.set(
-      etiquette,
+      cle,
       L.divIcon({
         className: 'etape-marqueur',
-        html: `<span class="etape-pastille">${etiquette}</span>`,
-        iconSize: [52, 22],
-        iconAnchor: [26, 11],
+        html: `<span class="etape-pastille" data-type="${typeSûr}">${marqueurMouvement(type)}${rang}</span>`,
+        iconSize: [46, 22],
+        iconAnchor: [23, 11],
         popupAnchor: [0, -12],
       }),
     )
   }
 
-  return icones.get(etiquette)
+  return icones.get(cle)
 }
 
 /**
@@ -95,7 +102,7 @@ export function JourneyMap({ points }) {
           <Marker
             key={`${p.etiquette}-${i}`}
             position={[p.lat, p.lon]}
-            icon={iconeEtape(p.etiquette)}
+            icon={iconeEtape(p.type, p.numeroEtape)}
             title={p.libelleParle}
           >
             <Popup>

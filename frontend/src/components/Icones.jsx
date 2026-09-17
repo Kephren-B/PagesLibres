@@ -28,6 +28,54 @@ export function IconeLoupe() {
   )
 }
 
+/**
+ * Tracés des deux types de mouvement, en **chaînes**.
+ *
+ * Ils servent deux rendus : le composant React de la frise, et les marqueurs
+ * Leaflet, qui attendent du HTML. Une seule source, donc, et des icônes qui ne
+ * peuvent pas diverger entre la frise et la carte.
+ *
+ * Ce sont des tracés fixes écrits ici : **aucune donnée utilisateur** n'entre
+ * dans cette chaîne. C'est ce qui autorise son injection dans un marqueur — la
+ * même garantie que pour les étiquettes d'étape.
+ */
+const TRACES_MOUVEMENT = {
+  // Un livre posé et une flèche qui s'en éloigne : le livre est laissé sur place.
+  liberation:
+    '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><line x1="14" y1="8" x2="21" y2="8"/><path d="M18.5 5.5 21 8l-2.5 2.5"/>',
+  // La loupe : le livre a été retrouvé.
+  trouvaille:
+    '<circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="21" y2="21"/>',
+}
+
+/** Types connus, dans l'ordre du catalogue — sert aussi de liste blanche. */
+export const TYPES_MOUVEMENT = Object.keys(TRACES_MOUVEMENT)
+
+/**
+ * Icône du type de mouvement. Décorative : le sens est porté par le libellé
+ * parlé de l'étape, ou par le texte adjacent.
+ */
+export function IconeMouvement({ type, taille = 15 }) {
+  const trace = TRACES_MOUVEMENT[type]
+  if (!trace) return null
+
+  return (
+    <svg
+      {...commun}
+      width={taille}
+      height={taille}
+      dangerouslySetInnerHTML={{ __html: trace }}
+    />
+  )
+}
+
+/** Même icône, en chaîne cette fois : Leaflet construit ses marqueurs en HTML. */
+export function marqueurMouvement(type, taille = 14) {
+  if (!TRACES_MOUVEMENT[type]) return ''
+
+  return `<svg viewBox="0 0 24 24" width="${taille}" height="${taille}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${TRACES_MOUVEMENT[type]}</svg>`
+}
+
 export function IconeCroix() {
   return (
     <svg {...commun} width={16} height={16}>

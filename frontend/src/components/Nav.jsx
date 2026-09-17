@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../theme'
 
@@ -12,16 +12,17 @@ export function Nav() {
 
   return (
     <nav className="nav">
-      <Link to="/" className="nav-brand">PagesLibres</Link>
+      <NavLink to="/" end className="nav-brand">PagesLibres</NavLink>
       <div className="nav-links">
-        <Link to="/">Livres</Link>
-        {isAuthenticated && <Link to="/livres/nouveau">Ajouter un livre</Link>}
-        {isAuthenticated && <Link to="/trouvaille">Déclarer une trouvaille</Link>}
-        {isAuthenticated && <Link to="/profil">Mon profil</Link>}
-        {isAdmin && <Link to="/admin/signalements">Modération</Link>}
+        <NavLink to="/" end>Livres</NavLink>
+        {isAuthenticated && <NavLink to="/livres/nouveau">Ajouter un livre</NavLink>}
+        {isAuthenticated && <NavLink to="/trouvaille">Déclarer une trouvaille</NavLink>}
+        {isAuthenticated && <NavLink to="/profil">Mon profil</NavLink>}
+        {isAdmin && <NavLink to="/admin/signalements">Modération</NavLink>}
         {isAuthenticated ? (
           <button
             type="button"
+            className="nav-utilitaire"
             onClick={() => {
               logout()
               navigate('/')
@@ -31,13 +32,13 @@ export function Nav() {
           </button>
         ) : (
           <>
-            <Link to="/connexion">Connexion</Link>
-            <Link to="/inscription">Inscription</Link>
+            <NavLink to="/connexion">Connexion</NavLink>
+            <NavLink to="/inscription">Inscription</NavLink>
           </>
         )}
         <button
           type="button"
-          className="theme-toggle"
+          className="nav-utilitaire"
           onClick={basculer}
           aria-label={`Passer au thème ${themeCible}`}
           title={`Passer au thème ${themeCible}`}

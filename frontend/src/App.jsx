@@ -1,5 +1,6 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { Nav } from './components/Nav'
+import { Footer } from './components/Footer'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { BooksPage } from './pages/BooksPage'
 import { NewBookPage } from './pages/NewBookPage'
@@ -69,6 +70,7 @@ function AppRoutes() {
           />
         </Routes>
       </main>
+      <Footer />
     </>
   )
 }

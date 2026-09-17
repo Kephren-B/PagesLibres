@@ -27,14 +27,40 @@
   flex-wrap: wrap;
 }
 .nav-links a { color: var(--sur-chrome); font-weight: 500; }
-.nav-links a:hover { color: var(--or); }
-.nav-links button {
+/* Survol à l'or. Mesuré : 4,80:1 sur la barre en thème clair et 7,47:1 en
+   thème sombre — la barre reste sombre dans les deux (c'est `--chrome`), donc
+   l'accent de la charte y passe AA. */
+.nav-links a:hover,
+.nav-links .nav-utilitaire:hover {
+  color: var(--or);
   background: transparent;
-  border: 1px solid var(--sur-chrome);
-  padding: 0.4rem 0.9rem;
-  color: var(--sur-chrome);
 }
-.nav-links button:hover { background: var(--tampon); border-color: var(--tampon); color: var(--sur-accent); }
+/* Utilitaires de l'en-tête : « Déconnexion » et « Thème ». Ce sont des commandes
+   secondaires — elles ne doivent pas peser plus que la navigation.
+
+   ⚠️ Sans classe, la règle de base `button[type="button"]:not([class])` les
+   peint en `--encre`, et elle est bien plus spécifique que `.nav-links button` :
+   d'où un bouton sombre au milieu de la barre, plus voyant que tout le reste.
+   Toute commande de l'en-tête doit donc porter `.nav-utilitaire`. */
+.nav-links .nav-utilitaire {
+  background: transparent;
+  border: none;
+  padding: 0.15rem 0.1rem;
+  color: var(--sur-chrome);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25rem;
+}
+/* La page courante est la seule chose qui doive ressortir : c'est là qu'on est.
+   `--sur-chrome` sur le fond de la barre — aucune couleur nouvelle. */
+.nav-links a[aria-current='page'] {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3rem;
+}
 
 /* ===== Page ===== */
 .page {
@@ -309,7 +335,10 @@
   top: 0;
   width: 4.4rem;
   padding: 0.1rem 0;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.28rem;
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
   color: var(--texte);
@@ -317,6 +346,17 @@
   border: 2px solid var(--mousse);
   border-radius: 999px;
 }
+/* Le type se lit dans l'icône et la bordure, jamais dans le fond du texte :
+   blanc sur `--mousse` ne donne que 3,61:1, sous AA — la règle est déjà écrite
+   pour la frise. Le rang reste en surface + encre (12,28:1) ; l'icône, élément
+   non textuel, porte la couleur du type (5,48:1 pour le tampon, 3,6:1 pour la
+   mousse, au-dessus du 3:1 attendu d'un graphique). */
+.timeline-pastille[data-type='liberation'],
+.etape-pastille[data-type='liberation'] { border-color: var(--tampon); }
+.timeline-pastille[data-type='liberation'] svg,
+.etape-pastille[data-type='liberation'] svg { color: var(--tampon); }
+.timeline-pastille[data-type='trouvaille'] svg,
+.etape-pastille[data-type='trouvaille'] svg { color: var(--mousse); }
 .timeline-pastille-pending {
   border-color: var(--bordure);
   color: var(--encre-doux);
@@ -438,8 +478,11 @@
    sur un fond de carte, dont on ne maîtrise pas la couleur. */
 .etape-marqueur { background: none; border: none; }
 .etape-pastille {
-  display: block;
-  padding: 0.06rem 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.24rem;
+  padding: 0.06rem 0.34rem;
   font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -874,6 +917,44 @@
 @media (max-width: 900px) {
   .voyage { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ===== Pied de page =====
+   La mise en page en colonne sur #root le repousse en bas de fenêtre, même
+   quand la page est courte (connexion, erreur). */
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+main { flex: 1; }
+.footer {
+  margin-top: 2.5rem;
+  background: var(--surface);
+  border-top: 1px solid var(--bordure);
+}
+/* Même largeur et mêmes marges que `.page`, pour que le pied de page reste
+   aligné sur le contenu qu'il suit. */
+.footer-contenu {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.6rem 1.6rem 2.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  color: var(--encre-doux);
+}
+.footer-contenu p { margin: 0; max-width: 78ch; }
+.footer-titre {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--texte);
+}
+.footer a { color: var(--encre-doux); text-decoration: underline; }
+.footer a:hover { color: var(--tampon); }
+.footer-contenu .footer-utilitaire { margin-top: 0.35rem; }
 
 /* ===== Responsive ===== */
 @media (max-width: 640px) {

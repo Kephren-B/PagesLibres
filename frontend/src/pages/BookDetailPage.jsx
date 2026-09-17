@@ -5,7 +5,7 @@ import { urlCouverture } from '../api/googleBooks'
 import { useAuth } from '../context/AuthContext'
 import { JourneyMap } from '../components/JourneyMap'
 import { ChoixPosition } from '../components/ChoixPosition'
-import { IconeEtiquette } from '../components/Icones'
+import { IconeEtiquette, IconeMouvement } from '../components/Icones'
 import { cadenceEtapes, etiqueterEtapes, DUREE_APPARITION, DUREE_EFFACEMENT, DUREE_TRACE } from '../etapes'
 import {
   distanceKm,
@@ -208,6 +208,8 @@ export function BookDetailPage() {
   const journeyPoints = etapes.map((etape) => ({
     lat: etape.positionArrondie.latitude,
     lon: etape.positionArrondie.longitude,
+    type: etape.typeMouvement,
+    numeroEtape: etape.numeroEtape,
     etiquette: etape.etiquette,
     libelleParle: etape.libelleParle,
     label: `${LABELS_MOUVEMENT[etape.typeMouvement] ?? etape.typeMouvement} — ${new Date(etape.dateMouvement).toLocaleString('fr-FR')}`,
@@ -350,7 +352,10 @@ export function BookDetailPage() {
             {etapes.map((etape, i) => (
               <li key={etape.idMouvement ?? i} className="timeline-step" style={{ '--rang': i }}>
                 <span className="timeline-trait" aria-hidden="true" />
-                <span className="timeline-pastille" aria-hidden="true">{etape.etiquette}</span>
+                <span className="timeline-pastille" data-type={etape.typeMouvement} aria-hidden="true">
+                  <IconeMouvement type={etape.typeMouvement} />
+                  {etape.numeroEtape}
+                </span>
                 <div className="timeline-content">
                   <span className="timeline-label">
                     <span className="sr-only">{etape.libelleParle} — </span>
