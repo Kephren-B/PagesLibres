@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
+import { ChoixPosition } from '../components/ChoixPosition'
 
 export function DeclareTrouvaillePage() {
   const [codeBcid, setCodeBcid] = useState('')
@@ -21,7 +22,9 @@ export function DeclareTrouvaillePage() {
         setLatitude(String(pos.coords.latitude))
         setLongitude(String(pos.coords.longitude))
       },
-      () => setError('Impossible de récupérer votre position.')
+      () => setError(
+        'Position automatique indisponible : placez le point sur la carte, ou saisissez les coordonnées.'
+      )
     )
   }
 
@@ -48,6 +51,10 @@ export function DeclareTrouvaillePage() {
       setSucces(exemplaire)
       setCodeBcid('')
       setMessage('')
+      // Une nouvelle trouvaille se fait ailleurs : on repart d'une carte vierge
+      // plutôt que de laisser la position de la précédente.
+      setLatitude('')
+      setLongitude('')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -63,6 +70,15 @@ export function DeclareTrouvaillePage() {
           Code BCID (inscrit sur l'exemplaire)
           <input value={codeBcid} onChange={(e) => setCodeBcid(e.target.value)} required maxLength={20} />
         </label>
+        <ChoixPosition
+          latitude={latitude}
+          longitude={longitude}
+          onChoisir={(lat, lon) => {
+            setLatitude(String(lat))
+            setLongitude(String(lon))
+          }}
+        />
+        <button type="button" onClick={useMaPosition}>Utiliser ma position actuelle</button>
         <label>
           Latitude
           <input value={latitude} onChange={(e) => setLatitude(e.target.value)} required />
@@ -71,7 +87,6 @@ export function DeclareTrouvaillePage() {
           Longitude
           <input value={longitude} onChange={(e) => setLongitude(e.target.value)} required />
         </label>
-        <button type="button" onClick={useMaPosition}>Utiliser ma position actuelle</button>
         <label>
           Message (optionnel)
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} />

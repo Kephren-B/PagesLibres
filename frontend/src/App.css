@@ -419,6 +419,21 @@
 /* Le tracé du voyage : une seule ligne, d'une étape à la suivante. */
 .trace-voyage { stroke: var(--mousse); stroke-width: 3; }
 
+/* ===== Choix d'un point : libération (F3) et trouvaille (F5) ===== */
+.choix-position { margin: 0.5rem 0 1.1rem; }
+.choix-position-carte {
+  height: 280px;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--bordure);
+  box-shadow: var(--ombre);
+}
+.choix-position-legende {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: var(--encre-doux);
+}
+
 /* Pastilles numérotées des étapes, sur la carte. Fond opaque : elles se posent
    sur un fond de carte, dont on ne maîtrise pas la couleur. */
 .etape-marqueur { background: none; border: none; }

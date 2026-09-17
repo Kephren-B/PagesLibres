@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import { urlCouverture } from '../api/googleBooks'
 import { useAuth } from '../context/AuthContext'
 import { JourneyMap } from '../components/JourneyMap'
+import { ChoixPosition } from '../components/ChoixPosition'
 import { cadenceEtapes, etiqueterEtapes, DUREE_APPARITION, DUREE_EFFACEMENT, DUREE_TRACE } from '../etapes'
 
 const STATUTS = {
@@ -24,8 +25,10 @@ export function BookDetailPage() {
   const [livre, setLivre] = useState(null)
   const [exemplaires, setExemplaires] = useState([]);
   const [selectedExemplaire, setSelectedExemplaire] = useState(null)
+  // Exemplaire qui vient d'être libéré : on affiche alors son BCID, généré par
+  // la plateforme, pour que le membre le recopie dans le livre.
+  const [exemplaireLibere, setExemplaireLibere] = useState(null)
   const [error, setError] = useState(null)
-  const [codeBcid, setCodeBcid] = useState('')
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
   const [busy, setBusy] = useState(false)
@@ -80,7 +83,9 @@ export function BookDetailPage() {
         setLatitude(String(pos.coords.latitude))
         setLongitude(String(pos.coords.longitude))
       },
-      () => setError('Impossible de récupérer votre position.')
+      () => setError(
+        'Position automatique indisponible : placez le point sur la carte, ou saisissez les coordonnées.'
+      )
     )
   }
 
@@ -91,7 +96,6 @@ export function BookDetailPage() {
     try {
       const exemplaire = await api.createExemplaire({
         livre: `/api/livres/${id}`,
-        codeBcid,
       })
       await api.createMouvement({
         exemplaire: `/api/exemplaires/${exemplaire.idExemplaire}`,
@@ -99,7 +103,7 @@ export function BookDetailPage() {
         latitude,
         longitude,
       })
-      setCodeBcid('')
+      setExemplaireLibere(exemplaire)
       setLatitude('')
       setLongitude('')
       await reload()
@@ -243,11 +247,20 @@ export function BookDetailPage() {
       {isAuthenticated && (
         <div className="page-form">
           <h2>Libérer un nouvel exemplaire</h2>
+          <p className="subtitle">
+            Le code BCID est attribué par PagesLibres : il s'affiche une fois l'exemplaire
+            enregistré, à recopier dans le livre.
+          </p>
           <form onSubmit={handleLibererExemplaire}>
-            <label>
-              Code BCID
-              <input value={codeBcid} onChange={(e) => setCodeBcid(e.target.value)} required maxLength={20} />
-            </label>
+            <ChoixPosition
+              latitude={latitude}
+              longitude={longitude}
+              onChoisir={(lat, lon) => {
+                setLatitude(String(lat))
+                setLongitude(String(lon))
+              }}
+            />
+            <button type="button" onClick={useMaPosition}>Utiliser ma position actuelle</button>
             <label>
               Latitude
               <input value={latitude} onChange={(e) => setLatitude(e.target.value)} required />
@@ -256,9 +269,16 @@ export function BookDetailPage() {
               Longitude
               <input value={longitude} onChange={(e) => setLongitude(e.target.value)} required />
             </label>
-            <button type="button" onClick={useMaPosition}>Utiliser ma position actuelle</button>
             <button type="submit" disabled={busy}>{busy ? 'Libération…' : 'Libérer cet exemplaire'}</button>
           </form>
+          {exemplaireLibere && (
+            <p className="success">
+              Exemplaire enregistré et libéré. Son code BCID est{' '}
+              <code className="stamp">{exemplaireLibere.codeBcid}</code> — recopiez-le dans le
+              livre avant de le déposer : c'est lui qui permettra au prochain lecteur de
+              raconter la suite.
+            </p>
+          )}
         </div>
       )}
 
