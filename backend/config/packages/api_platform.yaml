@@ -3,6 +3,12 @@ api_platform:
     version: 1.0.0
     defaults:
         stateless: true
+        # F8 : le catalogue se charge par pages successives (« Voir plus »).
+        # Sans `pagination_client_items_per_page`, le paramètre `itemsPerPage`
+        # est ignoré en silence (vérifié) ; sans plafond, un client pourrait
+        # demander l'intégralité des tables en une requête.
+        pagination_client_items_per_page: true
+        pagination_maximum_items_per_page: 30
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin']
     formats:

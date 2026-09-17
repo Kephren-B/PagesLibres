@@ -30,7 +30,11 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ['groups' => ['livre:read']],
     denormalizationContext: ['groups' => ['livre:write']],
 )]
-#[ApiFilter(SearchFilter::class, properties: ['titre' => 'partial', 'auteur' => 'partial', 'categorie' => 'exact', 'isbn' => 'exact'])]
+// F8 : recherche par titre et par auteur, filtre par catégorie. Le préfixe « i »
+// des stratégies (ipartial / iexact) rend la comparaison insensible à la casse :
+// SearchFilter enveloppe alors les deux côtés dans LOWER(). Sans lui, une
+// recherche en minuscules (« dune ») ne renvoyait rien.
+#[ApiFilter(SearchFilter::class, properties: ['titre' => 'ipartial', 'auteur' => 'ipartial', 'categorie' => 'iexact', 'isbn' => 'exact'])]
 class Livre
 {
     #[ORM\Id]

@@ -45,6 +45,19 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
   return data
 }
 
+/**
+ * Requête du catalogue : recherche par titre, filtre par catégorie (F8) et
+ * pagination. Fonction pure, couverte par client.test.js.
+ */
+export function requeteLivres({ titre = '', categorie = '', limite = null } = {}) {
+  const parametres = new URLSearchParams()
+  if (titre) parametres.set('titre', titre)
+  if (categorie) parametres.set('categorie', categorie)
+  if (limite) parametres.set('itemsPerPage', String(limite))
+  const requete = parametres.toString()
+  return requete ? `?${requete}` : ''
+}
+
 export const api = {
   register: (payload) => request('/api/utilisateurs', { method: 'POST', body: payload }),
   login: (payload) => request('/api/login_check', { method: 'POST', body: payload }),
@@ -52,6 +65,34 @@ export const api = {
   listLivres: (query = '') => request(`/api/livres${query}`),
   getLivre: (id) => request(`/api/livres/${id}`),
   createLivre: (payload) => request('/api/livres', { method: 'POST', body: payload, auth: true }),
+
+  /**
+   * Vocabulaire des catégories, déduit du catalogue (F8).
+   *
+   * L'API ne propose pas de route « valeurs distinctes » et la réponse JSON des
+   * collections ne porte aucune métadonnée de pagination : on parcourt donc les
+   * pages jusqu'à en recevoir une incomplète — sinon les catégories présentes
+   * au-delà de la première page resteraient invisibles. La taille de page est
+   * déduite de la première réponse, l'API pouvant plafonner `itemsPerPage`.
+   */
+  listCategories: async () => {
+    const categories = new Set()
+    let taillePage = null
+
+    for (let page = 1; page <= 20; page += 1) {
+      const donnees = await request(`/api/livres?itemsPerPage=30&page=${page}`)
+      const lot = Array.isArray(donnees) ? donnees : []
+      if (taillePage === null) taillePage = lot.length || 1
+
+      lot.forEach((livre) => {
+        if (livre.categorie) categories.add(livre.categorie)
+      })
+
+      if (lot.length < taillePage) break
+    }
+
+    return [...categories].sort((a, b) => a.localeCompare(b, 'fr'))
+  },
 
   listExemplaires: (query = '') => request(`/api/exemplaires${query}`),
   getExemplaire: (id) => request(`/api/exemplaires/${id}`, { auth: true }),
@@ -64,8 +105,15 @@ export const api = {
   listCommentaires: (query = '') => request(`/api/commentaires${query}`),
   createCommentaire: (payload) => request('/api/commentaires', { method: 'POST', body: payload, auth: true }),
 
-  proximite: (lat, lon, rayon = 5000) =>
-    request(`/api/exemplaires/proximite?lat=${lat}&lon=${lon}&rayon=${rayon}`, { auth: true }),
+  // F4 : proximité. F8 : filtres facultatifs par catégorie et par statut
+  // (« en_circulation » = disponible, « trouve » = en lecture).
+  proximite: (lat, lon, rayon = 5000, filtres = {}) => {
+    const parametres = new URLSearchParams({ lat: String(lat), lon: String(lon), rayon: String(rayon) })
+    if (filtres.categorie) parametres.set('categorie', filtres.categorie)
+    if (filtres.statut) parametres.set('statut', filtres.statut)
+
+    return request(`/api/exemplaires/proximite?${parametres}`, { auth: true })
+  },
 
   getMoi: () => request('/api/moi', { auth: true }),
   listMesMouvements: (utilisateurIri) => request(`/api/mouvements?utilisateur=${utilisateurIri}`, { auth: true }),

@@ -59,22 +59,31 @@
   flex-direction: column;
   gap: 0.9rem;
 }
-.book-list a {
-  display: block;
-  padding: 1.1rem 1.3rem;
+/* La carte est portée par le <li> et non par le lien : la pastille de catégorie
+   est un bouton de filtre (F8) et un élément interactif ne peut pas être
+   imbriqué dans un <a>. */
+.book-list li {
   background: var(--surface);
   border: 1px solid var(--bordure);
   border-left: 5px solid var(--tampon);
   border-radius: 10px;
   box-shadow: var(--ombre);
+  padding-bottom: 0.9rem;
+  transition: border-left-color 0.15s ease, transform 0.06s ease;
 }
-.book-list a:hover { border-left-color: var(--or); transform: translateX(3px); }
+.book-list li:hover { border-left-color: var(--or); transform: translateX(3px); }
+.book-list a { display: block; padding: 1.1rem 1.3rem 0.5rem; }
 .book-list strong { font-family: var(--serif); font-size: 1.15rem; display: block; }
-/* Puce de catégorie (catalogue). Sans cette règle, le <span class="tag"> de
-   BooksPage.jsx s'affichait en texte brut, collé au nom de l'auteur. */
+.book-list-vide {
+  border-left-color: var(--bordure) !important;
+  color: var(--encre-doux);
+  padding: 1.1rem 1.3rem;
+}
+.book-list-vide:hover { transform: none; border-left-color: var(--bordure) !important; }
+/* Puce de catégorie (catalogue) : bouton de filtre, placé hors du lien. */
 .tag {
   display: inline-block;
-  margin-left: 0.6rem;
+  margin: 0 0 0 1.3rem;
   padding: 0.12rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -85,7 +94,9 @@
   border: 1px solid var(--mousse);
   border-radius: 999px;
   vertical-align: middle;
+  cursor: pointer;
 }
+.tag:hover { opacity: 1; border-color: var(--tampon); color: var(--tampon); }
 .exemplaire-list li,
 .avis-list li {
   background: var(--surface);
@@ -191,7 +202,10 @@
   gap: 1rem;
   margin-bottom: 1rem;
 }
-.rayon-picker { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--encre-doux); }
+/* Les pastilles passent à la ligne : sans `flex-wrap`, la rangée de catégories
+   débordait horizontalement en mobile. `nowrap` sur les libellés évite qu'un
+   intitulé se coupe en deux à l'intérieur d'une pastille. */
+.rayon-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--encre-doux); }
 .rayon-btn {
   background: var(--surface);
   color: var(--texte);
@@ -199,6 +213,7 @@
   padding: 0.3rem 0.7rem;
   font-size: 0.85rem;
   border-radius: 999px;
+  white-space: nowrap;
 }
 .rayon-btn:hover { opacity: 1; border-color: var(--tampon); }
 .rayon-btn.active { background: var(--encre); color: var(--papier); border-color: var(--encre); }
@@ -208,7 +223,7 @@
   border: 1px solid var(--bordure);
   box-shadow: var(--ombre);
 }
-.home-map { z-index: 0; }
+.home-map { z-index: 0; height: 440px; width: 100%; }
 .map-caption { margin: 0.6rem 0 0; font-size: 0.85rem; color: var(--encre-doux); }
 .map-popup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 160px; }
 .map-popup-title { font-family: var(--serif); font-size: 1rem; }
@@ -390,8 +405,27 @@
 .modo-actions .btn-ok { background: var(--mousse); }
 .modo-actions .btn-non { background: var(--tampon); }
 
+/* ===== Accueil : compteur et pagination du catalogue ===== */
+.compteur { margin: -0.6rem 0 0.9rem; font-size: 0.9rem; color: var(--encre-doux); }
+.voir-plus {
+  display: block;
+  margin: 1.2rem auto 0;
+  background: var(--surface);
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+  padding: 0.6rem 1.4rem;
+}
+.voir-plus:hover { border-color: var(--tampon); color: var(--tampon); }
+
 /* ===== Responsive ===== */
 @media (max-width: 640px) {
   .nav { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
   .page { padding: 1.4rem 1rem 3rem; }
+  /* Mobile first : la carte ne doit pas manger tout l'écran avant le catalogue. */
+  .home-map { height: 300px; }
+}
+
+/* Desktop : le catalogue se déploie sur deux colonnes, l'accueil reste court. */
+@media (min-width: 900px) {
+  .book-list { display: grid; grid-template-columns: repeat(2, 1fr); }
 }

@@ -17,8 +17,11 @@ const tamponIcon = L.divIcon({
  * markers: [{ idExemplaire, codeBcid, lat, lon, livre: { idLivre, titre, auteur } }]
  */
 export function HomeMap({ center, markers }) {
+  // La hauteur est pilotée par le CSS (.home-map) et non par un style inline :
+  // l'inline l'emporterait sur la feuille de style et empêcherait de réduire la
+  // carte sur mobile.
   return (
-    <MapContainer center={center} zoom={13} scrollWheelZoom style={{ height: 440, width: '100%' }} className="home-map">
+    <MapContainer center={center} zoom={13} scrollWheelZoom className="home-map">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
