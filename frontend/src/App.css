@@ -281,33 +281,90 @@
   border: 1px solid var(--bordure);
 }
 
-/* ===== Frise chronologique (journal de voyage) ===== */
+/* ===== Frise chronologique (journal de voyage) =====
+   Une pastille numérotée par étape (« 3 · L2 »), révélée dans l'ordre, et un
+   trait unique qui se dessine de pastille en pastille puis s'efface.
+
+   Contraste : la pastille est un texte — surface + encre (12,3:1 en clair,
+   13,4:1 en sombre), jamais du blanc sur mousse (3,6:1, sous AA). La bordure
+   mousse, elle, porte la couleur : 3,6:1 sur la surface, au-dessus du 3:1
+   exigé pour un élément non textuel (WCAG 1.4.11). */
 .timeline {
   list-style: none;
   margin: 1.2rem 0 0;
-  padding: 0 0 0 0.4rem;
+  padding: 0;
   position: relative;
 }
 .timeline-step {
   position: relative;
-  padding: 0 0 1.4rem 1.6rem;
-  border-left: 2px solid var(--bordure);
+  padding: 0 0 1.4rem 5.4rem;
 }
-.timeline-step:last-child { border-left-color: transparent; padding-bottom: 0; }
-.timeline-dot {
+.timeline-step:last-child { padding-bottom: 0; }
+
+/* Largeur fixe : l'axe du trait ne dépend donc pas de la longueur du libellé
+   (« 3 · L2 » et « 19 · L10 » partagent le même gabarit). */
+.timeline-pastille {
   position: absolute;
-  left: -8px;
-  top: 0.2rem;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--mousse);
-  border: 3px solid var(--papier-fonce);
-  box-shadow: 0 0 0 2px var(--mousse);
+  left: 0;
+  top: 0;
+  width: 4.4rem;
+  padding: 0.1rem 0;
+  text-align: center;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--texte);
+  background: var(--surface);
+  border: 2px solid var(--mousse);
+  border-radius: 999px;
 }
-.timeline-dot-pending {
-  background: var(--papier-fonce);
-  box-shadow: 0 0 0 2px var(--bordure);
+.timeline-pastille-pending {
+  border-color: var(--bordure);
+  color: var(--encre-doux);
+}
+
+/* Trait unique : chaque segment va de sa pastille à la suivante. `forwards`
+   conserve chaque segment une fois tracé — sinon il s'effacerait aussitôt et
+   l'on verrait un segment courant au lieu d'une ligne qui s'allonge. C'est
+   `effacer`, déclenchée à --fin-trait, qui fait disparaître la ligne entière
+   une fois le trajet parcouru. */
+.timeline-trait {
+  position: absolute;
+  left: 2.2rem;
+  top: 1.7rem;
+  bottom: 0;
+  width: 2px;
+  background: var(--mousse);
+  transform: scaleY(0);
+  transform-origin: top;
+  animation:
+    tracer var(--duree-trace, 240ms) linear calc(var(--rang) * var(--delai)) forwards,
+    effacer var(--duree-effacement, 400ms) ease var(--fin-trait) forwards;
+}
+.timeline-step:last-child .timeline-trait { display: none; }
+
+.timeline-pastille,
+.timeline-content {
+  animation: apparaitre var(--duree-apparition, 320ms) ease calc(var(--rang) * var(--delai)) backwards;
+}
+
+@keyframes tracer {
+  to { transform: scaleY(1); }
+}
+@keyframes effacer {
+  to { opacity: 0; }
+}
+@keyframes apparaitre {
+  from { opacity: 0; transform: translateY(-0.3rem); }
+}
+
+/* WCAG 2.3.3 : sans animation, tout est affiché d'emblée et le trait reste
+   absent — il ne porte aucune information, la pastille si. */
+@media (prefers-reduced-motion: reduce) {
+  .timeline-trait,
+  .timeline-pastille,
+  .timeline-content {
+    animation: none;
+  }
 }
 .timeline-content { display: flex; flex-direction: column; gap: 0.15rem; }
 .timeline-label { font-weight: 700; }
@@ -331,6 +388,53 @@
   box-shadow: var(--ombre);
 }
 .home-map { z-index: 0; height: 440px; width: 100%; }
+
+/* ===== Cadre de carte, plein écran et tracé (F4/F6) ===== */
+.carte-cadre { position: relative; }
+.carte-journal { z-index: 0; height: 320px; width: 100%; }
+.carte-cadre:fullscreen { border-radius: 0; background: var(--surface); }
+.carte-cadre:fullscreen .home-map,
+.carte-cadre:fullscreen .carte-journal { height: 100vh; }
+
+.carte-plein-ecran {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 1000;              /* au-dessus des contrôles Leaflet (400) */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;          /* cible tactile — WCAG 2.2 AA, 2.5.8 */
+  min-height: 2.2rem;
+  padding: 0.35rem 0.5rem;
+  background: var(--surface);
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+  border-radius: 8px;
+  box-shadow: var(--ombre);
+  cursor: pointer;
+}
+.carte-plein-ecran:hover { border-color: var(--tampon); background: var(--tampon-doux); }
+
+/* Le tracé du voyage : une seule ligne, d'une étape à la suivante. */
+.trace-voyage { stroke: var(--mousse); stroke-width: 3; }
+
+/* Pastilles numérotées des étapes, sur la carte. Fond opaque : elles se posent
+   sur un fond de carte, dont on ne maîtrise pas la couleur. */
+.etape-marqueur { background: none; border: none; }
+.etape-pastille {
+  display: block;
+  padding: 0.06rem 0.3rem;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--texte);
+  background: var(--surface);
+  border: 2px solid var(--mousse);
+  border-radius: 999px;
+  box-shadow: 0 2px 5px var(--ombre-marqueur);
+}
 .map-caption { display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0; font-size: 0.85rem; color: var(--encre-doux); }
 .map-popup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 160px; }
 .map-popup-title { font-family: var(--serif); font-size: 1rem; }

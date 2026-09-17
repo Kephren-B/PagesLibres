@@ -4,6 +4,7 @@ import { api } from '../api/client'
 import { urlCouverture } from '../api/googleBooks'
 import { useAuth } from '../context/AuthContext'
 import { JourneyMap } from '../components/JourneyMap'
+import { cadenceEtapes, etiqueterEtapes, DUREE_APPARITION, DUREE_EFFACEMENT, DUREE_TRACE } from '../etapes'
 
 const STATUTS = {
   en_circulation: 'En circulation',
@@ -142,13 +143,17 @@ export function BookDetailPage() {
     return <div className="page">{error ? <p className="error">{error}</p> : <p>Chargement…</p>}</div>
   }
 
-  const journeyPoints = selectedExemplaire
-    ? selectedExemplaire.mouvements.map((m) => ({
-        lat: m.positionArrondie.latitude,
-        lon: m.positionArrondie.longitude,
-        label: `${m.typeMouvement} — ${new Date(m.dateMouvement).toLocaleString('fr-FR')}`,
-      }))
-    : []
+  // Les étapes sont étiquetées une seule fois : la frise et la carte partagent
+  // donc la même numérotation (« 3 · L2 »), et une seule vérité.
+  const etapes = selectedExemplaire ? etiqueterEtapes(selectedExemplaire.mouvements) : []
+  const cadence = cadenceEtapes(etapes.length)
+  const journeyPoints = etapes.map((etape) => ({
+    lat: etape.positionArrondie.latitude,
+    lon: etape.positionArrondie.longitude,
+    etiquette: etape.etiquette,
+    libelleParle: etape.libelleParle,
+    label: `${LABELS_MOUVEMENT[etape.typeMouvement] ?? etape.typeMouvement} — ${new Date(etape.dateMouvement).toLocaleString('fr-FR')}`,
+  }))
 
   const couverture = livre.couvertureUrl ? urlCouverture(livre.couvertureUrl) : null
 
@@ -189,32 +194,43 @@ export function BookDetailPage() {
       {selectedExemplaire && (
         <div className="journal">
           <h3>Journal de voyage — <span className="stamp">{selectedExemplaire.codeBcid}</span></h3>
-          <JourneyMap points={journeyPoints} />
-          <ol className="timeline">
-            {selectedExemplaire.mouvements.map((m, i) => (
-              <li key={i} className="timeline-step">
-                <span className="timeline-dot" />
+          <JourneyMap key={selectedExemplaire.idExemplaire} points={journeyPoints} />
+          <ol
+            className="timeline"
+            style={{
+              '--delai': `${cadence.delai}ms`,
+              '--fin-trait': `${cadence.finTrait}ms`,
+              '--duree-apparition': `${DUREE_APPARITION}ms`,
+              '--duree-trace': `${DUREE_TRACE}ms`,
+              '--duree-effacement': `${DUREE_EFFACEMENT}ms`,
+            }}
+          >
+            {etapes.map((etape, i) => (
+              <li key={etape.idMouvement ?? i} className="timeline-step" style={{ '--rang': i }}>
+                <span className="timeline-trait" aria-hidden="true" />
+                <span className="timeline-pastille" aria-hidden="true">{etape.etiquette}</span>
                 <div className="timeline-content">
                   <span className="timeline-label">
-                    {LABELS_MOUVEMENT[m.typeMouvement] ?? m.typeMouvement}
-                    {m.utilisateur?.pseudo && <> par {m.utilisateur.pseudo}</>}
+                    <span className="sr-only">{etape.libelleParle} — </span>
+                    {LABELS_MOUVEMENT[etape.typeMouvement] ?? etape.typeMouvement}
+                    {etape.utilisateur?.pseudo && <> par {etape.utilisateur.pseudo}</>}
                   </span>
-                  <span className="timeline-date">{new Date(m.dateMouvement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                  {m.message && <p className="timeline-message">« {m.message} »</p>}
+                  <span className="timeline-date">{new Date(etape.dateMouvement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  {etape.message && <p className="timeline-message">« {etape.message} »</p>}
                 </div>
               </li>
             ))}
             {selectedExemplaire.statut === 'trouve' && (
-              <li className="timeline-step timeline-step-pending">
-                <span className="timeline-dot timeline-dot-pending" />
+              <li className="timeline-step timeline-step-pending" style={{ '--rang': etapes.length }}>
+                <span className="timeline-pastille timeline-pastille-pending" aria-hidden="true">…</span>
                 <div className="timeline-content">
                   <span className="timeline-label">En attente d'une nouvelle libération…</span>
                 </div>
               </li>
             )}
             {selectedExemplaire.statut === 'en_circulation' && (
-              <li className="timeline-step timeline-step-pending">
-                <span className="timeline-dot timeline-dot-pending" />
+              <li className="timeline-step timeline-step-pending" style={{ '--rang': etapes.length }}>
+                <span className="timeline-pastille timeline-pastille-pending" aria-hidden="true">…</span>
                 <div className="timeline-content">
                   <span className="timeline-label">En attente d'une nouvelle trouvaille…</span>
                 </div>

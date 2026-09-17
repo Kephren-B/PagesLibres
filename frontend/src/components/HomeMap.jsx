@@ -1,6 +1,8 @@
+import { useRef, useState } from 'react'
 import L from 'leaflet'
 import { Link } from 'react-router-dom'
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
+import { BoutonPleinEcran, RecalculTaille } from './BoutonPleinEcran'
 
 // Marqueur "tampon" : pastille encre avec anneau tampon, plutôt que le
 // pin bleu par défaut de Leaflet — cohérent avec la charte du Jalon 2.
@@ -17,37 +19,44 @@ const tamponIcon = L.divIcon({
  * markers: [{ idExemplaire, codeBcid, lat, lon, livre: { idLivre, titre, auteur } }]
  */
 export function HomeMap({ center, markers }) {
+  const cadreRef = useRef(null)
+  const [bascules, setBascules] = useState(0)
+
   // La hauteur est pilotée par le CSS (.home-map) et non par un style inline :
   // l'inline l'emporterait sur la feuille de style et empêcherait de réduire la
-  // carte sur mobile.
+  // carte sur mobile — et de l'agrandir en plein écran.
   return (
-    <MapContainer center={center} zoom={13} scrollWheelZoom className="home-map">
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      {markers.map((m) => (
-        <Marker key={m.idExemplaire} position={[m.lat, m.lon]} icon={tamponIcon}>
-          <Popup>
-            <div className="map-popup">
-              {m.livre ? (
-                <>
-                  <strong className="map-popup-title">{m.livre.titre}</strong>
-                  <span className="map-popup-auteur">{m.livre.auteur}</span>
-                </>
-              ) : (
-                <strong className="map-popup-title">Livre en cours de chargement…</strong>
-              )}
-              <code className="stamp stamp-small">{m.codeBcid}</code>
-              {m.livre && (
-                <Link to={`/livres/${m.livre.idLivre}`} className="map-popup-link">
-                  Voir la fiche
-                </Link>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+    <div className="carte-cadre" ref={cadreRef}>
+      <MapContainer center={center} zoom={13} scrollWheelZoom className="home-map">
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <RecalculTaille declencheur={bascules} />
+        {markers.map((m) => (
+          <Marker key={m.idExemplaire} position={[m.lat, m.lon]} icon={tamponIcon}>
+            <Popup>
+              <div className="map-popup">
+                {m.livre ? (
+                  <>
+                    <strong className="map-popup-title">{m.livre.titre}</strong>
+                    <span className="map-popup-auteur">{m.livre.auteur}</span>
+                  </>
+                ) : (
+                  <strong className="map-popup-title">Livre en cours de chargement…</strong>
+                )}
+                <code className="stamp stamp-small">{m.codeBcid}</code>
+                {m.livre && (
+                  <Link to={`/livres/${m.livre.idLivre}`} className="map-popup-link">
+                    Voir la fiche
+                  </Link>
+                )}
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+      <BoutonPleinEcran conteneurRef={cadreRef} onChangement={() => setBascules((n) => n + 1)} />
+    </div>
   )
 }
