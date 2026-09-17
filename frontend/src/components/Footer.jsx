@@ -20,8 +20,9 @@ export function Footer() {
         </p>
         <p>
           <strong>Positions jamais publiées en clair</strong> : l'API n'expose qu'un point
-          arrondi à trois décimales, soit environ 100 mètres. Le détail des données
-          conservées et des droits exercables est décrit dans le dossier de projet.
+          arrondi à trois décimales, soit environ 100 mètres. Le détail de ce qui est
+          conservé et des droits exercables est sur la page{' '}
+          <Link to="/confidentialite">Confidentialité et données personnelles</Link>.
         </p>
         <p className="footer-utilitaire">
           <Link to="/">Catalogue</Link>

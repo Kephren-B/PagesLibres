@@ -41,7 +41,11 @@
    ⚠️ Sans classe, la règle de base `button[type="button"]:not([class])` les
    peint en `--encre`, et elle est bien plus spécifique que `.nav-links button` :
    d'où un bouton sombre au milieu de la barre, plus voyant que tout le reste.
-   Toute commande de l'en-tête doit donc porter `.nav-utilitaire`. */
+   Toute commande de l'en-tête doit donc porter `.nav-utilitaire`.
+
+   Elles sont volontairement **identiques aux liens** — même graisse, même
+   couleur, pas de soulignement. Seule la page courante ressort, par
+   `aria-current` : c'est la seule chose qui apprenne quelque chose. */
 .nav-links .nav-utilitaire {
   background: transparent;
   border: none;
@@ -49,9 +53,6 @@
   color: var(--sur-chrome);
   font-size: 1rem;
   font-weight: 500;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.25rem;
 }
 /* La page courante est la seule chose qui doive ressortir : c'est là qu'on est.
    `--sur-chrome` sur le fond de la barre — aucune couleur nouvelle. */
@@ -61,6 +62,21 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 0.3rem;
 }
+/* Leaflet pose ses propres z-index : panneaux de 200 à 650, contrôles de 800 à
+   1000. Sans contexte d'empilement, ces valeurs s'échappent de la carte et
+   passent devant l'en-tête collant (z-index 10) — c'est ce qui faisait passer la
+   carte du formulaire de libération devant la barre.
+
+   On isole donc **deux** niveaux, et pas un seul :
+   · le cadre, car il contient aussi le bouton plein écran (`.carte-plein-ecran`,
+     z-index 1000), qui est un frère de la carte et non un descendant ;
+   · le conteneur, car la carte du formulaire de libération n'a pas de cadre
+     (`.choix-position-carte` ne porte ni `position` ni `z-index`).
+
+   ⚠️ `.carte-journal` portait déjà `z-index: 0`, ce qui suffisait pour elle —
+   d'où un bug intermittent, présent sur certaines cartes seulement. */
+.leaflet-container,
+.carte-cadre { isolation: isolate; }
 
 /* ===== Page ===== */
 .page {

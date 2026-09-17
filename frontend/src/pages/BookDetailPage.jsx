@@ -360,7 +360,9 @@ export function BookDetailPage() {
                   <span className="timeline-label">
                     <span className="sr-only">{etape.libelleParle} — </span>
                     {LABELS_MOUVEMENT[etape.typeMouvement] ?? etape.typeMouvement}
-                    {etape.utilisateur?.pseudo && <> par {etape.utilisateur.pseudo}</>}
+                    {etape.utilisateur?.pseudo
+                      ? <> par {etape.utilisateur.pseudo}</>
+                      : <> par un membre supprimé</>}
                   </span>
                   <span className="timeline-date">{new Date(etape.dateMouvement).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                   {etape.message && <p className="timeline-message">« {etape.message} »</p>}

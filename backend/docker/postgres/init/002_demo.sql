@@ -633,17 +633,75 @@ WHERE livre.titre = v.titre
   AND v.url IS NOT NULL
   AND livre.couverture_url IS NULL;
 
+-- ---------------------------------------------------------------------------
+-- 8. Un membre qui a exercé son droit à l'effacement (RGPD)
+--
+--    La règle vient du MPD et n'est pas négociable : toutes les clés étrangères
+--    vers `utilisateur` sont en ON DELETE SET NULL, jamais CASCADE —
+--    « id_utilisateur mis à NULL si le compte est supprimé, sans effacer
+--    l'événement ». Les contributions restent donc, anonymisées, pour ne pas
+--    rompre l'historique de voyage d'un livre.
+--
+--    Ce bloc le met en scène au lieu de l'affirmer : un compte est créé,
+--    déclare deux trouvailles, puis est supprimé. Les deux mouvements
+--    subsistent sans auteur, et la frise du livre affiche « par un membre
+--    supprimé ».
+--
+--    Placé en fin de fichier pour ne pas décaler les récits numérotés
+--    ci-dessus, et bâti pour être rejouable : on repart d'un état propre avant
+--    de rejouer la scène, si bien qu'aucun doublon ne s'accumule.
+-- ---------------------------------------------------------------------------
+
+-- a) État initial : les mouvements anonymes de ces deux exemplaires, et leur
+--    statut. Un rejeu repart donc de zéro.
+DELETE FROM mouvement
+ WHERE id_utilisateur IS NULL
+   AND id_exemplaire IN (SELECT id_exemplaire FROM exemplaire WHERE code_bcid IN ('PL-2M4QW-FR', 'PL-5RJ2N-FR'));
+
+UPDATE exemplaire SET statut = 'en_circulation' WHERE code_bcid IN ('PL-2M4QW-FR', 'PL-5RJ2N-FR');
+
+-- b) Le compte, créé pour la démonstration. Son mot de passe est celui des
+--    autres comptes du jeu (DemoPagesLibres2026!) : il disparaît à l'étape d).
+INSERT INTO utilisateur (pseudo, email, mot_de_passe_hash, bio, role, date_inscription)
+SELECT 'membre_parti', 'parti@demo.pageslibres',
+       '$argon2id$v=19$m=65536,t=4,p=1$IBDGHbTS3DbFG+7cyofyag$JdlBcruflxoskLc86qtY+ZNxyIMNWt/bJDlaHtHxQXA',
+       'A exercé son droit à l''effacement — ses trouvailles restent.', 'membre', '2026-08-01 09:00:00'
+ WHERE NOT EXISTS (SELECT 1 FROM utilisateur WHERE email = 'parti@demo.pageslibres');
+
+-- c) Ses deux trouvailles, après le dernier mouvement de chaque exemplaire.
+INSERT INTO mouvement (id_exemplaire, id_utilisateur, type_mouvement, latitude, longitude, message, date_mouvement)
+SELECT e.id_exemplaire, u.id_utilisateur, 'trouvaille'::type_mouvement, v.lat, v.lon, v.msg, v.dt::timestamp
+FROM exemplaire e
+JOIN utilisateur u ON u.email = 'parti@demo.pageslibres'
+CROSS JOIN (VALUES
+  ('PL-2M4QW-FR', 48.880900, 2.355300, 'Trouvé aux Halles, sur une borne du forum.', '2026-09-14 18:10:00'),
+  ('PL-5RJ2N-FR', 48.841200, 2.343000, 'Trouvé au jardin des Plantes, sur un banc à l''ombre.', '2026-09-12 11:05:00')
+) AS v(code_bcid, lat, lon, msg, dt)
+WHERE e.code_bcid = v.code_bcid;
+
+UPDATE exemplaire SET statut = 'trouve' WHERE code_bcid IN ('PL-2M4QW-FR', 'PL-5RJ2N-FR');
+
+-- d) Le droit à l'effacement. Le compte disparaît ; les deux mouvements écrits
+--    en c) restent en base, avec id_utilisateur à NULL. C'est la seule ligne
+--    de ce fichier qui exerce réellement la règle du MPD.
+DELETE FROM utilisateur WHERE email = 'parti@demo.pageslibres';
+
 -- ============================================================================
 -- Contrôle rapide (à lancer à la main) :
 --
 --   SELECT count(*) AS livres FROM livre;                        -- 50
 --   SELECT count(*) AS exemplaires FROM exemplaire;              -- 52
 --   SELECT count(*) AS en_circulation FROM exemplaire
---     WHERE statut = 'en_circulation';                           -- 50
---   SELECT count(*) AS mouvements FROM mouvement;                -- 200
+--     WHERE statut = 'en_circulation';                           -- 48
+--   SELECT count(*) AS mouvements FROM mouvement;                -- 202
+--   SELECT count(*) FROM mouvement
+--     WHERE id_utilisateur IS NULL;                              -- 2
 --   SELECT l.titre, count(*) FILTER (WHERE e.statut = 'en_circulation') AS dispo
 --     FROM livre l LEFT JOIN exemplaire e ON e.id_livre = l.id_livre
---     GROUP BY l.titre ORDER BY dispo;                           -- aucune ligne à 0
+--     GROUP BY l.titre ORDER BY dispo;
+--     -- deux titres à 0 : leurs exemplaires uniques sont entre les mains d'un
+--     -- trouveur. C'est le cas normal d'un livre relâché, et la section 8 en
+--     -- fait justement une démonstration.
 --   SELECT min(date_mouvement)::date, max(date_mouvement)::date
 --     FROM mouvement;                     -- 2026-05-12 → 2026-09-16
 --   SELECT count(*) FILTER (WHERE couverture_url IS NOT NULL) AS avec,

@@ -6,6 +6,7 @@ import { BooksPage } from './pages/BooksPage'
 import { NewBookPage } from './pages/NewBookPage'
 import { BookDetailPage } from './pages/BookDetailPage'
 import { DeclareTrouvaillePage } from './pages/DeclareTrouvaillePage'
+import { ConfidentialitePage } from './pages/ConfidentialitePage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ProfilePage } from './pages/ProfilePage'
@@ -35,6 +36,7 @@ function AppRoutes() {
           <Route path="/" element={<BooksPage />} />
           <Route path="/connexion" element={<LoginPage />} />
           <Route path="/inscription" element={<RegisterPage />} />
+          <Route path="/confidentialite" element={<ConfidentialitePage />} />
           <Route path="/livres/:id" element={<BookDetailPage />} />
           <Route
             path="/livres/nouveau"
