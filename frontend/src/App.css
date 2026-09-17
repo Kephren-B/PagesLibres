@@ -515,7 +515,15 @@
 }
 .badge-card strong { font-family: var(--serif); font-size: 1.05rem; }
 .badge-card p { margin: 0.2rem 0; color: var(--encre-doux); font-size: 0.9rem; }
-.badge-date { font-size: 0.78rem; color: var(--encre-faible); }
+/* `--encre-faible` donne 2,83:1 en clair et 4,03:1 en sombre : sous le seuil AA
+   du texte courant, pour une information — « Obtenu le… » ou « Non obtenu » —
+   qui n'est pas décorative. `--encre-doux` mesure 5,50:1 et 4,65:1. */
+.badge-etat { font-size: 0.78rem; color: var(--encre-doux); }
+/* Badge non obtenu : seule la bordure haute perd l'or, et l'icône reste vide.
+   Volontairement aucune couleur nouvelle ni opacité : atténuer tout le bloc
+   ferait passer le texte sous le seuil AA, et la distinction repose de toute
+   façon sur le libellé « Non obtenu », pas sur la teinte. */
+.badge-card-verrouille { border-top-color: var(--bordure); }
 .badge-icon {
   flex-shrink: 0;
   width: 2.4rem;
@@ -537,9 +545,13 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+/* Le tri est une commande, pas une décoration : il précède la liste qu'il
+   ordonne. Les pastilles sont celles des filtres de l'accueil. */
+.history-outils { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0; }
 .history-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.8rem;
   background: var(--surface);
   border: 1px solid var(--bordure);
@@ -547,6 +559,12 @@
   padding: 0.6rem 0.9rem;
 }
 .history-date { color: var(--encre-doux); font-size: 0.9rem; }
+.history-message {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--encre-doux);
+  font-size: 0.9rem;
+}
 .history-tag {
   font-size: 0.78rem;
   font-weight: 700;
@@ -557,8 +575,59 @@
   color: var(--sur-accent);
 }
 .history-tag-liberation { background: var(--tampon); }
-.history-tag-trouvaille { background: var(--mousse); }
+/* Étiquette de trouvaille : contour et non aplat.
+   Mesuré : blanc sur `--mousse` donne 3,61:1, sous le seuil AA du texte courant
+   — la règle est déjà écrite plus haut à propos de la frise (« jamais du blanc
+   sur mousse »). Même schéma que là-bas : surface + encre (5,50:1), la mousse
+   portant la couleur par la bordure (3,6:1, au-dessus du 3:1 attendu d'un
+   élément non textuel). La libération garde son aplat, blanc sur `--tampon`
+   donnant 5,48:1 : les deux états se distinguent aussi par la forme. */
+.history-tag-trouvaille {
+  background: var(--surface);
+  color: var(--encre-doux);
+  border: 1px solid var(--mousse);
+}
 
+/* Modification du pseudo : un formulaire en ligne, pas une page à part. */
+.profil-entete {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+}
+.pseudo-bouton {
+  min-height: 2.2rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--surface);
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+}
+.pseudo-bouton:hover { border-color: var(--tampon); background: var(--tampon-doux); }
+.pseudo-form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+.pseudo-form input { max-width: 16rem; min-height: 2.4rem; }
+/* Action principale : texte sur tampon, 5,48:1 (clair) / 5,03:1 (sombre). */
+.pseudo-valider {
+  min-height: 2.4rem;
+  padding: 0.4rem 1rem;
+  font-weight: 700;
+  color: var(--sur-accent);
+  background: var(--tampon);
+  border: 1px solid var(--tampon);
+}
+.pseudo-valider:disabled { opacity: 0.6; cursor: default; }
+.pseudo-annuler {
+  min-height: 2.4rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--surface);
+  color: var(--texte);
+  border: 1px solid var(--bordure);
+}
 /* ===== Feedback ===== */
 .error {
   color: var(--tampon);
@@ -568,7 +637,11 @@
   padding: 0.6rem 0.9rem;
   border-radius: 6px;
 }
-.success { color: var(--mousse); font-weight: 600; }
+/* Message de confirmation : mesuré, `--mousse` sur le papier ne donne que
+   3,00:1, sous le seuil AA du texte courant. `--encre-doux` donne 5,50:1 en
+   clair et 5,42:1 en sombre — une confirmation n'a pas besoin d'être colorée
+   pour être vue, elle a besoin d'être lue. */
+.success { color: var(--encre-doux); font-weight: 600; }
 
 /* ===== Back-office : modération des signalements (F10) ===== */
 .modo-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 1.2rem; }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
@@ -31,6 +32,18 @@ use Symfony\Component\Validator\Constraints as Assert;
  * soi-même : le journal de voyage d'un Exemplaire (Get, public) expose
  * déjà les mêmes mouvements avec le pseudo du contributeur, ce endpoint
  * n'élève donc pas le niveau d'exposition existant.
+ *
+ * Ordre chronologique (F9) — mesuré : sans ordre explicite, PostgreSQL rend
+ * les lignes par ordre d'insertion (idMouvement croissant, ce qui mêlait
+ * 2026-09-16 et 2026-05-12), et le paramètre `?order[...]` était **ignoré**
+ * en silence, comme l'est `itemsPerPage`. Deux mesures distinctes :
+ * · `order:` sur la ressource fixe le défaut — le plus récent d'abord,
+ *   avec idMouvement en second critère : deux mouvements de même date
+ *   gardent un ordre stable, sans quoi la pagination pourrait répéter ou
+ *   sauter une ligne ;
+ * · `OrderFilter` rend le tri pilotable par le client. Le client doit alors
+ *   fournir les **deux** critères, le filtre remplaçant l'ordre par défaut
+ *   au lieu de s'y ajouter.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'mouvement')]
@@ -43,8 +56,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     normalizationContext: ['groups' => ['mouvement:read']],
     denormalizationContext: ['groups' => ['mouvement:write']],
+    order: ['dateMouvement' => 'DESC', 'idMouvement' => 'DESC'],
 )]
 #[ApiFilter(SearchFilter::class, properties: ['utilisateur' => 'exact', 'typeMouvement' => 'exact'])]
+#[ApiFilter(OrderFilter::class, properties: ['dateMouvement', 'idMouvement'])]
 class Mouvement
 {
     #[ORM\Id]

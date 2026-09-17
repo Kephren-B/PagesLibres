@@ -8,12 +8,14 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Enum\RoleUtilisateur;
 use App\State\MoiProvider;
 use App\State\UtilisateurProcessor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -32,12 +34,37 @@ use Symfony\Component\Validator\Constraints\PasswordStrength;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'utilisateur')]
+// Sans ces contraintes, un pseudo (ou un email) déjà pris remontait l'erreur
+// d'index unique de PostgreSQL en 500 — vérifié : `UniqueEntity` était absent
+// de cette entité. Elles valent pour l'inscription comme pour la modification.
+#[UniqueEntity('pseudo', message: 'Ce pseudo est déjà pris.', groups: ['Default', 'utilisateur:profil'])]
+#[UniqueEntity('email', message: 'Un compte existe déjà avec cet email.')]
 #[ApiResource(
     operations: [
         new GetCollection(),
         new Get(),
         new Get(uriTemplate: '/moi', provider: MoiProvider::class, security: "is_granted('ROLE_USER')"),
         new Post(processor: UtilisateurProcessor::class),
+        // F9 : le membre modifie son propre pseudo depuis son profil.
+        //
+        // Deux verrous plutôt qu'un : `security` restreint l'opération à son
+        // propre objet, et `denormalizationContext` réduit les champs
+        // acceptés au seul pseudo. Le groupe `utilisateur:write` ne pouvait
+        // pas servir : il contient `plainPassword`, marqué NotBlank, si bien
+        // que toute modification partielle aurait échoué en 422. `role` reste
+        // hors des deux groupes d'écriture — aucune auto-promotion possible.
+        new Patch(
+            security: 'object === user',
+            denormalizationContext: ['groups' => ['utilisateur:profil']],
+            // Les groupes du validateur sont indépendants de ceux du
+            // sérialiseur : sans cette ligne, la validation restait sur
+            // `Default`, où vit `plainPassword` — mesuré, tout patch répondait
+            // 422 « plainPassword should not be blank ». Les règles du pseudo
+            // sont donc déclarées dans ce groupe également (`Default` les
+            // conserve pour l'inscription). Écrire `Default` ici ramènerait le
+            // problème : il ne faut pas.
+            validationContext: ['groups' => ['utilisateur:profil']],
+        ),
     ],
     normalizationContext: ['groups' => ['utilisateur:read']],
     denormalizationContext: ['groups' => ['utilisateur:write']],
@@ -51,9 +78,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $idUtilisateur = null;
 
     #[ORM\Column(name: 'pseudo', type: Types::STRING, length: 50, unique: true)]
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 50)]
-    #[Groups(['utilisateur:read', 'utilisateur:write', 'avis:read', 'commentaire:read', 'mouvement:read', 'exemplaire:read', 'signalement:read'])]
+    #[Assert\NotBlank(groups: ['Default', 'utilisateur:profil'])]
+    #[Assert\Length(max: 50, groups: ['Default', 'utilisateur:profil'])]
+    #[Groups(['utilisateur:read', 'utilisateur:write', 'utilisateur:profil', 'avis:read', 'commentaire:read', 'mouvement:read', 'exemplaire:read', 'signalement:read'])]
     private string $pseudo;
 
     #[ORM\Column(name: 'email', type: Types::STRING, length: 255, unique: true)]

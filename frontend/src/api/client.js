@@ -13,9 +13,11 @@ export function setToken(token) {
   }
 }
 
-async function request(path, { method = 'GET', body, auth = false } = {}) {
+async function request(path, { method = 'GET', body, auth = false, contentType } = {}) {
   const headers = { Accept: 'application/json' }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // PATCH exige `application/merge-patch+json` : avec `application/json`,
+  // API Platform remplace la ressource au lieu de la fusionner.
+  if (body !== undefined) headers['Content-Type'] = contentType ?? 'application/json'
   if (auth) {
     const token = getToken()
     if (token) headers.Authorization = `Bearer ${token}`
@@ -122,8 +124,46 @@ export const api = {
   },
 
   getMoi: () => request('/api/moi', { auth: true }),
-  listMesMouvements: (utilisateurIri) => request(`/api/mouvements?utilisateur=${utilisateurIri}`, { auth: true }),
-  listMesBadges: (utilisateurIri) => request(`/api/obtention_badges?utilisateur=${utilisateurIri}`, { auth: true }),
+
+  /**
+   * Catalogue des badges (F9) : lecture publique, 5 lignes de référence.
+   *
+   * Le profil n'obtient que les badges déjà mérités : sans ce catalogue, un
+   * membre ne peut pas savoir ce qu'il reste à décrocher.
+   */
+  listBadges: () => request('/api/badges'),
+
+  /** F9 : modification de son propre pseudo (seul champ accepté par l'API). */
+  updateProfil: (idUtilisateur, payload) =>
+    request(`/api/utilisateurs/${idUtilisateur}`, {
+      method: 'PATCH',
+      body: payload,
+      auth: true,
+      contentType: 'application/merge-patch+json',
+    }),
+
+  /**
+   * F9 : historique personnel.
+   *
+   * Le tri est demandé à l'API, jamais refait côté client : une page est déjà
+   * découpée, donc trier la liste affichée ne trierait que cette page. Le
+   * `OrderFilter` remplaçant l'ordre par défaut au lieu de s'y ajouter, les
+   * deux critères partent ensemble — sans le second, deux mouvements de même
+   * date s'ordonneraient au hasard.
+   */
+  listMesMouvements: (utilisateurIri, { page = 1, sens = 'desc', taille = 20 } = {}) => {
+    const parametres = new URLSearchParams({
+      utilisateur: utilisateurIri,
+      itemsPerPage: String(taille),
+      'order[dateMouvement]': sens,
+      'order[idMouvement]': sens,
+    })
+    if (page > 1) parametres.set('page', String(page))
+
+    return request(`/api/mouvements?${parametres}`, { auth: true })
+  },
+
+  listMesBadges: (utilisateurIri) => request(`/api/obtention_badges?utilisateur=${encodeURIComponent(utilisateurIri)}`, { auth: true }),
 
   // F10 — modération (back-office, admin)
   getAvis: (id) => request(`/api/avis/${id}`),
