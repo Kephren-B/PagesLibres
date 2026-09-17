@@ -69,3 +69,11 @@ docker compose up --build
 - Contraintes d'exclusivité CHECK du MPD répliquées côté validation
   Symfony (`App\Validator\ExactlyOneTarget`), en plus du CHECK PostgreSQL.
 - Scan de code-barres/QR hors périmètre — ne pas l'implémenter.
+- Une seule identité visuelle, deux thèmes : les six couleurs de la charte
+  (`--encre`, `--tampon`, `--mousse`, `--or`, `--papier`, `--papier-fonce`)
+  gardent leur nom et leur rôle d'un thème à l'autre, seules leurs valeurs
+  s'inversent. Les éléments s'appuient sur les rôles d'interface (`--texte`,
+  `--surface`, `--chrome`, `--sur-accent`…), jamais directement sur une couleur
+  de la palette : c'est ce qui rend l'inversion possible sans toucher aux règles.
+  Le fond de carte reste clair dans les deux thèmes (Leaflet + OSM) ; les popups
+  reçoivent donc localement les valeurs du thème clair pour rester lisibles.

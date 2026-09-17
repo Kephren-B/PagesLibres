@@ -1,9 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../theme'
 
 export function Nav() {
   const { isAuthenticated, logout, isAdmin } = useAuth()
+  const { theme, basculer } = useTheme()
   const navigate = useNavigate()
+
+  // Le bouton annonce la destination du clic, pas l'état courant.
+  const themeCible = theme === 'sombre' ? 'clair' : 'sombre'
 
   return (
     <nav className="nav">
@@ -30,6 +35,15 @@ export function Nav() {
             <Link to="/inscription">Inscription</Link>
           </>
         )}
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={basculer}
+          aria-label={`Passer au thème ${themeCible}`}
+          title={`Passer au thème ${themeCible}`}
+        >
+          Thème {themeCible}
+        </button>
       </div>
     </nav>
   )

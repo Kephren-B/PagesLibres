@@ -1,23 +1,105 @@
 /* ===== PagesLibres — Charte graphique (Jalon 2) ===== */
+/*
+  Le thème clair reste la référence : les six couleurs de la charte gardent leur
+  nom et leur rôle. Le thème sombre reprend ces six couleurs avec des valeurs
+  éclaircies — l'identité ne change pas, seules les valeurs s'inversent.
+
+  Le bloc sombre apparaît deux fois, volontairement :
+    · sous @media (prefers-color-scheme: dark), pour que le tout premier rendu
+      soit déjà correct (aucun éclair clair) sans script bloquant dans le HTML ;
+    · sous [data-theme='sombre'], pour le choix explicite de l'utilisateur.
+  ⚠️ Les deux blocs doivent rester synchronisés.
+*/
 :root {
-  /* Design tokens */
-  --encre: #1E3A34;      /* primaire : titres, structure, header */
-  --tampon: #B0483A;     /* accent : actions clés, CTA */
-  --mousse: #6B8F71;     /* statuts positifs */
-  --or: #C89B3C;         /* gamification / badges */
-  --papier: #F1E9D8;     /* fond */
-  --papier-fonce: #E6DCC6;
-  --blanc: #FFFFFF;
-  --encre-doux: rgba(30, 58, 52, 0.74);
-  --encre-faible: rgba(30, 58, 52, 0.5);
+  /* --- Palette de la charte — thème clair --- */
+  --encre: #1E3A34;         /* primaire : titres, structure */
+  --tampon: #B0483A;        /* accent : actions clés, CTA, code BCID */
+  --mousse: #6B8F71;        /* statuts positifs */
+  --or: #C89B3C;            /* gamification / badges */
+  --papier: #F1E9D8;        /* fond */
+  --papier-fonce: #E6DCC6;  /* panneaux (journal de voyage) */
+
+  /* --- Rôles d'interface — thème clair ---
+     Ils sont nécessaires parce qu'une même couleur tient plusieurs rôles : en
+     clair, --encre est à la fois la couleur des titres et celle du texte courant.
+     En sombre, les titres s'éclaircissent alors que le texte doit rester une
+     encre pâle — un seul token ne peut plus couvrir les deux. */
+  --texte: #1E3A34;                        /* texte courant */
+  --encre-doux: rgba(30, 58, 52, 0.74);    /* légendes, métadonnées */
+  --encre-faible: rgba(30, 58, 52, 0.5);   /* texte estompé, remplissage neutre */
+  --surface: #FFFFFF;                      /* cartes, champs, panneaux */
+  --sur-accent: #FFFFFF;                   /* texte posé sur un aplat de couleur */
+  --chrome: var(--encre);                  /* barre de navigation */
+  --sur-chrome: var(--papier);             /* texte de la barre de navigation */
+  --halo-carte: var(--papier);             /* anneau du marqueur sur la carte */
   --bordure: rgba(30, 58, 52, 0.16);
   --tampon-doux: rgba(176, 72, 58, 0.1);
+  --mousse-doux: rgba(107, 143, 113, 0.18);
   --or-doux: rgba(200, 155, 60, 0.16);
   --ombre: 0 10px 24px rgba(30, 58, 52, 0.10), 0 3px 8px rgba(30, 58, 52, 0.06);
+  --ombre-marqueur: rgba(30, 58, 52, 0.35);
 
   --sans: 'Work Sans', system-ui, sans-serif;
   --serif: 'Fraunces', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* ===== Thème sombre — mêmes rôles, mêmes noms, valeurs inversées ===== */
+
+/* a) Réglage du système : rend le premier affichage correct, avant tout JavaScript. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='clair']) {
+    --encre: #A8C9BE;         /* vert pin éclairci */
+    --tampon: #E06A55;        /* rouge brique éclairci */
+    --mousse: #8FBB96;
+    --or: #E0B65C;
+    --papier: #14211E;        /* encre très profonde */
+    --papier-fonce: #1C2E2A;  /* papier ombré : cartes, panneaux, en-tête */
+
+    --texte: #EDE6D8;                        /* papier éclairci */
+    --encre-doux: #9C9284;
+    --encre-faible: rgba(237, 230, 216, 0.5);
+    --surface: #1C2E2A;
+    --sur-accent: #14211E;                   /* texte sombre sur aplat éclairci */
+    --chrome: #1C2E2A;
+    --sur-chrome: #EDE6D8;
+    --halo-carte: #14211E;
+    --bordure: rgba(237, 230, 216, 0.16);
+    --tampon-doux: rgba(224, 106, 85, 0.14);
+    --mousse-doux: rgba(143, 187, 150, 0.16);
+    --or-doux: rgba(224, 182, 92, 0.16);
+    --ombre: 0 10px 24px rgba(0, 0, 0, 0.45), 0 3px 8px rgba(0, 0, 0, 0.35);
+    --ombre-marqueur: rgba(0, 0, 0, 0.55);
+
+    color-scheme: dark;  /* champs de formulaire et barres de défilement natifs */
+  }
+}
+
+/* b) Choix explicite, mémorisé — doit rester identique au bloc (a). */
+:root[data-theme='sombre'] {
+  --encre: #A8C9BE;
+  --tampon: #E06A55;
+  --mousse: #8FBB96;
+  --or: #E0B65C;
+  --papier: #14211E;
+  --papier-fonce: #1C2E2A;
+
+  --texte: #EDE6D8;
+  --encre-doux: #9C9284;
+  --encre-faible: rgba(237, 230, 216, 0.5);
+  --surface: #1C2E2A;
+  --sur-accent: #14211E;
+  --chrome: #1C2E2A;
+  --sur-chrome: #EDE6D8;
+  --halo-carte: #14211E;
+  --bordure: rgba(237, 230, 216, 0.16);
+  --tampon-doux: rgba(224, 106, 85, 0.14);
+  --mousse-doux: rgba(143, 187, 150, 0.16);
+  --or-doux: rgba(224, 182, 92, 0.16);
+  --ombre: 0 10px 24px rgba(0, 0, 0, 0.45), 0 3px 8px rgba(0, 0, 0, 0.35);
+  --ombre-marqueur: rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -25,7 +107,7 @@
 body {
   margin: 0;
   font-family: var(--sans);
-  color: var(--encre);
+  color: var(--texte);
   background: var(--papier);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -51,20 +133,23 @@ button {
   padding: 0.55rem 1.1rem;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--blanc);
+  color: var(--sur-accent);
   background: var(--tampon);
   transition: opacity 0.15s ease, transform 0.06s ease;
 }
 button:hover { opacity: 0.92; }
 button:active { transform: translateY(1px); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
-button[type="button"] { background: var(--encre); }
+/* Bouton secondaire par défaut. Restreint aux boutons SANS classe : sinon il
+   écrasait le fond des pastilles (rayon, onglets de modération) qui déclarent
+   le leur — et leur texte devenait illisible sur un fond encre. */
+button[type="button"]:not([class]) { background: var(--encre); }
 
 input, textarea, select {
   font-family: var(--sans);
   font-size: 1rem;
-  color: var(--encre);
-  background: var(--blanc);
+  color: var(--texte);
+  background: var(--surface);
   border: 1px solid var(--bordure);
   border-radius: 8px;
   padding: 0.55rem 0.7rem;

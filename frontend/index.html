@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Charte graphique (Jalon 2) : le thème clair est la référence, le thème
+         sombre inverse les mêmes tokens. color-scheme évite un fond blanc avant
+         le premier rendu ; theme-color teinte la barre du navigateur mobile. -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F1E9D8" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#14211E" />
     <title>PagesLibres</title>
     <!-- Charte graphique (Jalon 2) : Fraunces (titres), Work Sans (interface), IBM Plex Mono (codes BCID) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

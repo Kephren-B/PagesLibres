@@ -8,15 +8,15 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.9rem 1.6rem;
-  background: var(--encre);
-  color: var(--papier);
+  background: var(--chrome);
+  color: var(--sur-chrome);
   box-shadow: var(--ombre);
 }
 .nav-brand {
   font-family: var(--serif);
   font-weight: 800;
   font-size: 1.45rem;
-  color: var(--papier);
+  color: var(--sur-chrome);
   letter-spacing: 0.02em;
 }
 .nav-brand:hover { color: var(--or); }
@@ -26,15 +26,15 @@
   gap: 1rem;
   flex-wrap: wrap;
 }
-.nav-links a { color: var(--papier); font-weight: 500; }
+.nav-links a { color: var(--sur-chrome); font-weight: 500; }
 .nav-links a:hover { color: var(--or); }
 .nav-links button {
   background: transparent;
-  border: 1px solid var(--papier);
+  border: 1px solid var(--sur-chrome);
   padding: 0.4rem 0.9rem;
-  color: var(--papier);
+  color: var(--sur-chrome);
 }
-.nav-links button:hover { background: var(--tampon); border-color: var(--tampon); }
+.nav-links button:hover { background: var(--tampon); border-color: var(--tampon); color: var(--sur-accent); }
 
 /* ===== Page ===== */
 .page {
@@ -62,7 +62,7 @@
 .book-list a {
   display: block;
   padding: 1.1rem 1.3rem;
-  background: var(--blanc);
+  background: var(--surface);
   border: 1px solid var(--bordure);
   border-left: 5px solid var(--tampon);
   border-radius: 10px;
@@ -80,15 +80,15 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--encre);
-  background: rgba(107, 143, 113, 0.18);
+  color: var(--texte);
+  background: var(--mousse-doux);
   border: 1px solid var(--mousse);
   border-radius: 999px;
   vertical-align: middle;
 }
 .exemplaire-list li,
 .avis-list li {
-  background: var(--blanc);
+  background: var(--surface);
   border: 1px solid var(--bordure);
   border-radius: 10px;
   padding: 1rem 1.2rem;
@@ -175,7 +175,7 @@
 .timeline-message {
   margin: 0.4rem 0 0;
   padding: 0.6rem 0.8rem;
-  background: var(--blanc);
+  background: var(--surface);
   border-radius: 8px;
   border: 1px solid var(--bordure);
   font-style: italic;
@@ -193,8 +193,8 @@
 }
 .rayon-picker { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--encre-doux); }
 .rayon-btn {
-  background: var(--blanc);
-  color: var(--encre);
+  background: var(--surface);
+  color: var(--texte);
   border: 1px solid var(--bordure);
   padding: 0.3rem 0.7rem;
   font-size: 0.85rem;
@@ -213,11 +213,33 @@
 .map-popup { display: flex; flex-direction: column; gap: 0.35rem; min-width: 160px; }
 .map-popup-title { font-family: var(--serif); font-size: 1rem; }
 .map-popup-auteur { color: var(--encre-doux); font-size: 0.85rem; }
-.map-popup-link {
+/* Le sélecteur porte .leaflet-container : leaflet.css impose sa couleur de lien
+   (#0078A8), hors charte, et `.leaflet-container a` l'emporte sur une simple
+   classe. Replacer le lien dans la palette demande donc cette spécificité. */
+.leaflet-container .map-popup-link {
   margin-top: 0.2rem;
   font-weight: 700;
   color: var(--tampon);
 }
+/* La carte reste claire dans les deux thèmes (choix assumé, voir README.md
+   « Règles de conception non négociables ») : Leaflet peint ses popups en blanc
+   en dur. On redonne donc LOCALEMENT à la popup les valeurs du thème clair —
+   tous les styles qu'elle contient se résolvent en clair, et aucun de ses textes
+   ne peut passer sous le seuil de lisibilité sur ce fond blanc. Le sélecteur
+   porte .leaflet-container pour battre le `.leaflet-container a` de leaflet.css
+   (bleu hors charte). */
+.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .leaflet-popup-tip {
+  --texte: #1E3A34;
+  --encre: #1E3A34;
+  --encre-doux: #5C5347;                 /* Encre douce de la charte (Jalon 2) */
+  --tampon: #B0483A;
+  --tampon-doux: rgba(176, 72, 58, 0.1);
+  --surface: #FFFFFF;
+  background: var(--surface);
+  color: var(--texte);
+}
+.leaflet-container .leaflet-popup-close-button { color: var(--encre-doux); }
 .stamp-small { font-size: 0.7rem; padding: 0.1rem 0.5rem; }
 
 .tampon-marker-dot {
@@ -226,8 +248,8 @@
   height: 18px;
   border-radius: 50%;
   background: var(--tampon);
-  border: 3px solid var(--papier);
-  box-shadow: 0 0 0 2px var(--tampon), 0 3px 6px rgba(30, 58, 52, 0.35);
+  border: 3px solid var(--halo-carte);
+  box-shadow: 0 0 0 2px var(--tampon), 0 3px 6px var(--ombre-marqueur);
 }
 
 /* ===== Profil / badges (F9) ===== */
@@ -243,7 +265,7 @@
   display: flex;
   gap: 0.8rem;
   align-items: flex-start;
-  background: var(--blanc);
+  background: var(--surface);
   border: 1px solid var(--bordure);
   border-top: 4px solid var(--or);
   border-radius: 10px;
@@ -278,7 +300,7 @@
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  background: var(--blanc);
+  background: var(--surface);
   border: 1px solid var(--bordure);
   border-radius: 8px;
   padding: 0.6rem 0.9rem;
@@ -291,7 +313,7 @@
   letter-spacing: 0.03em;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  color: var(--blanc);
+  color: var(--sur-accent);
 }
 .history-tag-liberation { background: var(--tampon); }
 .history-tag-trouvaille { background: var(--mousse); }
@@ -310,8 +332,8 @@
 /* ===== Back-office : modération des signalements (F10) ===== */
 .modo-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 1.2rem; }
 .modo-tab {
-  background: var(--blanc);
-  color: var(--encre);
+  background: var(--surface);
+  color: var(--texte);
   border: 1px solid var(--bordure);
   padding: 0.35rem 0.85rem;
   font-size: 0.85rem;
@@ -328,7 +350,7 @@
   gap: 0.9rem;
 }
 .modo-card {
-  background: var(--blanc);
+  background: var(--surface);
   border: 1px solid var(--bordure);
   border-left: 5px solid var(--or);
   border-radius: 10px;
@@ -343,7 +365,7 @@
   letter-spacing: 0.06em;
   padding: 0.18rem 0.6rem;
   border-radius: 999px;
-  color: var(--blanc);
+  color: var(--sur-accent);
 }
 .modo-type-exemplaire { background: var(--tampon); }
 .modo-type-livre { background: var(--encre); }
@@ -358,12 +380,12 @@
   border: 1px solid var(--bordure);
 }
 .modo-chip-en_attente { color: var(--or); background: var(--or-doux); border-color: transparent; }
-.modo-chip-traite { color: var(--mousse); background: rgba(107, 143, 113, 0.14); border-color: transparent; }
+.modo-chip-traite { color: var(--mousse); background: var(--mousse-doux); border-color: transparent; }
 .modo-chip-rejete { color: var(--tampon); background: var(--tampon-doux); border-color: transparent; }
 .modo-cible { font-family: var(--serif); font-weight: 700; margin: 0.7rem 0 0.2rem; }
 .modo-motif { margin: 0 0 0.5rem; color: var(--encre-doux); font-style: italic; }
 .modo-meta { margin: 0; font-size: 0.85rem; color: var(--encre-doux); }
-.modo-meta strong { color: var(--encre); }
+.modo-meta strong { color: var(--texte); }
 .modo-actions { display: flex; gap: 0.5rem; margin-top: 0.8rem; }
 .modo-actions .btn-ok { background: var(--mousse); }
 .modo-actions .btn-non { background: var(--tampon); }
