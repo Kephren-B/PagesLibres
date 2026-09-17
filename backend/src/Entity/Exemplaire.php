@@ -13,11 +13,13 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Enum\StatutExemplaire;
 use App\Geo\GeoRounding;
+use App\State\ExemplaireProcessor;
 use App\State\ExemplaireProximiteProvider;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -32,7 +34,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         // pris comme idExemplaire littéral) et la route dédiée ci-dessous ne
         // serait jamais atteinte.
         new Get(requirements: ['idExemplaire' => '\d+']),
-        new Post(security: "is_granted('ROLE_USER')"),
+        new Post(processor: ExemplaireProcessor::class, security: "is_granted('ROLE_USER')"),
         // F4 : recherche par proximité (ST_DWithin), route dédiée hors CRUD standard.
         new GetCollection(
             uriTemplate: '/exemplaires/proximite',
@@ -44,6 +46,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ['groups' => ['exemplaire:write']],
 )]
 #[ApiFilter(SearchFilter::class, properties: ['codeBcid' => 'exact', 'livre' => 'exact', 'statut' => 'exact'])]
+// Le BCID est unique : un doublon doit répondre 422 avec un message lisible,
+// pas remonter l'erreur d'index de la base en 500. Les valeurs nulles sont
+// ignorées (ignoreNull par défaut), le temps que le processeur le renseigne.
+#[UniqueEntity('codeBcid')]
 class Exemplaire
 {
     #[ORM\Id]
@@ -57,11 +63,21 @@ class Exemplaire
     #[Groups(['exemplaire:read', 'exemplaire:write'])]
     private Livre $livre;
 
+    /**
+     * BCID attribué par la plateforme à la libération (F3) : « BCID unique
+     * généré » (CDCF Jalon 1). Le membre ne le choisit pas — le formulaire ne
+     * le demande plus. La colonne reste NOT NULL et UNIQUE en base ; c'est
+     * ExemplaireProcessor qui le renseigne avant persistance.
+     *
+     * `?string` et non `string` : la propriété n'est pas initialisée tant que le
+     * processeur n'a pas agi, et lire un `string` non initialisé lève une erreur.
+     * Une valeur fournie par le client reste acceptée (jeu de démonstration,
+     * tests) ; le doublon est refusé par UniqueEntity.
+     */
     #[ORM\Column(name: 'code_bcid', type: Types::STRING, length: 20, unique: true)]
-    #[Assert\NotBlank]
     #[Assert\Length(max: 20)]
     #[Groups(['exemplaire:read', 'exemplaire:write'])]
-    private string $codeBcid;
+    private ?string $codeBcid = null;
 
     #[ORM\Column(name: 'statut', type: Types::STRING, enumType: StatutExemplaire::class)]
     #[Groups(['exemplaire:read'])]
@@ -118,12 +134,12 @@ class Exemplaire
         return $this;
     }
 
-    public function getCodeBcid(): string
+    public function getCodeBcid(): ?string
     {
         return $this->codeBcid;
     }
 
-    public function setCodeBcid(string $codeBcid): static
+    public function setCodeBcid(?string $codeBcid): static
     {
         $this->codeBcid = $codeBcid;
 
