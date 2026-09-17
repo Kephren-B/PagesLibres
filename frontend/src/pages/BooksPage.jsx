@@ -70,7 +70,7 @@ export function BooksPage() {
     )
   }, [])
 
-  // Vocabulaire des catégories, pour les pastilles de filtre (F8).
+  // Vocabulaire des catégories, pour le filtre de catégorie (F8).
   useEffect(() => {
     api
       .listCategories()

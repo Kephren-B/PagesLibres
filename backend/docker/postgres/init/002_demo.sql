@@ -8,9 +8,14 @@
 --   · la CI charge uniquement `001_mpd.sql` (chemin explicite dans ci.yml) ;
 --   · le compose de prod ne copie que `001_mpd.sql` dans son volume d'init.
 --
--- Contenu : 4 comptes de démonstration, 10 livres, 12 exemplaires et leurs
+-- Contenu : 4 comptes de démonstration, 50 livres, 52 exemplaires et leurs
 -- journaux de voyage du 12/05/2026 au 16/09/2026, plus 2 avis, 1 commentaire,
 -- 4 signalements en attente (back-office F10) et 4 badges déjà obtenus (F9).
+--
+-- Dix livres sont écrits à la main (métadonnées, ISBN, couvertures, journaux
+-- soignés) ; les quarante autres remplissent le catalogue et sont engendrés par
+-- un bloc déterministe (section 3.b) — sans ISBN, pour ne pas inventer de
+-- référence bibliographique. Les journaux vont d'une seule libération à dix.
 --
 -- Idempotent : chaque insertion est gardée par un NOT EXISTS, le fichier peut
 -- être rejoué sans créer de doublon. Les comptes de démonstration partagent le
@@ -44,7 +49,11 @@ FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM utilisateur u WHERE u.email = v.email);
 
 -- ---------------------------------------------------------------------------
--- 2. Catalogue — 10 livres
+-- 2. Catalogue — 50 livres
+--    Les 10 premiers sont ceux du jeu curé (journal écrit à la main plus bas).
+--    Les 40 suivants n'ont pas d'ISBN : le jeu de démonstration n'invente pas de
+--    référence bibliographique — c'est la recherche par ISBN (F2) qui la renseigne
+--    quand un livre est réellement créé.
 -- ---------------------------------------------------------------------------
 INSERT INTO livre (isbn, titre, auteur, annee_publication, categorie, resume)
 SELECT v.isbn, v.titre, v.auteur, v.annee::smallint, v.categorie, v.resume
@@ -68,7 +77,48 @@ FROM (VALUES
   ('9782253006268', 'Le Mystère de la chambre jaune', 'Gaston Leroux', 1907, 'Policier',
    'Une chambre close, une victime, et Rouletabille pour démêler l''affaire.'),
   ('9782253006244', 'Le Grand Meaulnes', 'Alain-Fournier', 1913, 'Roman',
-   'La rencontre d''Augustin Meaulnes et du domaine perdu, entre rêve et nostalgie.')
+   'La rencontre d''Augustin Meaulnes et du domaine perdu, entre rêve et nostalgie.'),
+  -- Les 40 suivants : fond de catalogue, sans ISBN (voir l'en-tête de section).
+  (NULL, 'Le Rouge et le Noir', 'Stendhal', 1830, 'Classique', 'Julien Sorel, l''ambition et les sentiments, entre séminaire et salons.'),
+  (NULL, 'Madame Bovary', 'Gustave Flaubert', 1857, 'Classique', 'Emma Bovary cherche dans l''adultère l''illusion qu''elle doit au roman.'),
+  (NULL, 'Les Misérables', 'Victor Hugo', 1862, 'Classique', 'Jean Valjean, Cosette et la misère du peuple, de Digne aux barricades.'),
+  (NULL, 'Germinal', 'Émile Zola', 1885, 'Classique', 'Étienne Lantier et la grève des mineurs du Nord.'),
+  (NULL, 'Bel-Ami', 'Guy de Maupassant', 1885, 'Classique', 'Georges Duroy, arriviste sans scrupule, gravit la presse parisienne.'),
+  (NULL, 'Le Père Goriot', 'Honoré de Balzac', 1835, 'Classique', 'Un père ruiné par ses filles, dans la pension Vauquer.'),
+  (NULL, 'La Chartreuse de Parme', 'Stendhal', 1839, 'Classique', 'Fabrice del Dongo, de Waterloo à la prison de Parme.'),
+  (NULL, 'Vingt mille lieues sous les mers', 'Jules Verne', 1870, 'Aventure', 'Le Nautilus du capitaine Nemo et son tour des océans.'),
+  (NULL, 'Le Tour du monde en quatre-vingts jours', 'Jules Verne', 1872, 'Aventure', 'Phileas Fogg parie de boucler le globe dans les délais.'),
+  (NULL, 'Voyage au centre de la Terre', 'Jules Verne', 1864, 'Aventure', 'Un vieux manuscrit mène au centre du monde, par le Sneffels.'),
+  (NULL, 'L''Île mystérieuse', 'Jules Verne', 1875, 'Aventure', 'Cinq naufragés organisent leur survie, aidés par un inconnu.'),
+  (NULL, 'Les Trois Mousquetaires', 'Alexandre Dumas', 1844, 'Aventure', 'D''Artagnan et les mousquetaires du roi contre Richelieu.'),
+  (NULL, 'Vingt ans après', 'Alexandre Dumas', 1845, 'Aventure', 'Les quatre amis, vingt ans plus tard, entre Fronde et restauration.'),
+  (NULL, 'La Reine Margot', 'Alexandre Dumas', 1845, 'Historique', 'Marguerite de Valois, prise entre Charles IX et Henri de Navarre.'),
+  (NULL, 'Les Fleurs du mal', 'Charles Baudelaire', 1857, 'Poésie', 'Spleen et Idéal : le recueil qui fit scandale en 1857.'),
+  (NULL, 'Alcools', 'Guillaume Apollinaire', 1913, 'Poésie', 'Le Pont Mirabeau, Zone, et la modernité en vers libres.'),
+  (NULL, 'Une saison en enfer', 'Arthur Rimbaud', 1873, 'Poésie', 'Le seul recueil publié de son vivant, entre révolte et adieu.'),
+  (NULL, 'Les Contemplations', 'Victor Hugo', 1856, 'Poésie', 'Vingt-cinq ans de vie, du bonheur à la mort de Léopoldine.'),
+  (NULL, 'Cyrano de Bergerac', 'Edmond Rostand', 1897, 'Théâtre', 'Le nez, le panache, et une lettre écrite pour un autre.'),
+  (NULL, 'Le Malade imaginaire', 'Molière', 1673, 'Théâtre', 'Argan, ses médecins, et la ruse d''Angélique.'),
+  (NULL, 'L''Avare', 'Molière', 1668, 'Théâtre', 'Harpagon, sa cassette, et la folie de l''économie.'),
+  (NULL, 'Le Misanthrope', 'Molière', 1666, 'Théâtre', 'Alceste dit toujours la vérité, et le paie cher.'),
+  (NULL, 'Antigone', 'Jean Anouilh', 1944, 'Théâtre', 'La jeune fille face à Créon, sous l''Occupation.'),
+  (NULL, 'La Peste', 'Albert Camus', 1947, 'Roman', 'Oran fermée par l''épidémie, et la solidarité qui naît.'),
+  (NULL, 'La Chute', 'Albert Camus', 1956, 'Roman', 'Le monologue d''un juge pénitent dans un bar d''Amsterdam.'),
+  (NULL, 'Le Mythe de Sisyphe', 'Albert Camus', 1942, 'Essai', 'L''absurde, et l''idée qu''il faut imaginer Sisyphe heureux.'),
+  (NULL, 'La Nausée', 'Jean-Paul Sartre', 1938, 'Roman', 'Roquentin, Bouville, et la découverte de l''existence.'),
+  (NULL, 'Le Deuxième Sexe', 'Simone de Beauvoir', 1949, 'Essai', '« On ne naît pas femme, on le devient. »'),
+  (NULL, 'L''Amant', 'Marguerite Duras', 1984, 'Roman', 'L''enfance indochinoise et la passion interdite, prix Goncourt.'),
+  (NULL, 'Moderato cantabile', 'Marguerite Duras', 1958, 'Roman', 'Une femme et un inconnu autour d''un crime, dans un café.'),
+  (NULL, 'La Vie devant soi', 'Romain Gary', 1975, 'Roman', 'Mommo, les enfants de Madame Rosa, et Belleville.'),
+  (NULL, 'Les Liaisons dangereuses', 'Choderlos de Laclos', 1782, 'Classique', 'Le duel épistolaire de Merteuil et Valmont.'),
+  (NULL, 'Manon Lescaut', 'Abbé Prévost', 1731, 'Classique', 'Des Grieux, Manon, et une passion qui ne raisonne pas.'),
+  (NULL, 'La Princesse de Clèves', 'Madame de La Fayette', 1678, 'Classique', 'L''aveu impossible, à la cour d''Henri II.'),
+  (NULL, 'Le Cid', 'Pierre Corneille', 1637, 'Théâtre', 'Chimène et Rodrigue, entre amour et honneur.'),
+  (NULL, 'Andromaque', 'Jean Racine', 1667, 'Théâtre', 'La chaîne des passions, jusqu''au sacrifice.'),
+  (NULL, 'Le Petit Nicolas', 'René Goscinny', 1960, 'Jeunesse', 'La bande de copains, la maîtresse, et le ballon.'),
+  (NULL, 'Le Club des cinq', 'Enid Blyton', 1942, 'Jeunesse', 'Quatre enfants, un chien, et des vacances qui tournent court.'),
+  (NULL, 'Harry Potter à l''école des sorciers', 'J. K. Rowling', 1997, 'Jeunesse', 'Un cousin malheureux découvre qu''il est sorcier.'),
+  (NULL, 'Le Seigneur des anneaux', 'J. R. R. Tolkien', 1954, 'Fantasy', 'La Communauté, l''Anneau, et la Terre du Milieu.')
 ) AS v(isbn, titre, auteur, annee, categorie, resume)
 WHERE NOT EXISTS (SELECT 1 FROM livre l WHERE l.titre = v.titre);
 
@@ -80,7 +130,9 @@ WHERE NOT EXISTS (SELECT 1 FROM livre l WHERE l.titre = v.titre);
 --    messages.
 -- ---------------------------------------------------------------------------
 
--- Le Comte de Monte-Cristo — exemplaire 1 : le journal complet (5 étapes).
+-- Le Comte de Monte-Cristo — exemplaire 1 : le journal le plus long du jeu
+-- (10 libérations, 19 étapes, du 12/05 au 16/09/2026). C'est la frise à montrer
+-- pour F6.
 WITH nouvel AS (
   INSERT INTO exemplaire (id_livre, code_bcid, statut, date_creation)
   SELECT l.id_livre, 'PL-7F8KT-FR', 'en_circulation', '2026-05-12'
@@ -94,9 +146,23 @@ SELECT n.id_exemplaire, u.id_utilisateur, m.type::type_mouvement, m.lat, m.lon, 
 FROM nouvel n
 CROSS JOIN (VALUES
   ('liberation', 48.844300, 2.374300, 'Libéré près de la gare de Lyon, sur un banc du hall.', '2026-05-12 09:20:00', 'marie@demo.pageslibres'),
+  ('trouvaille', 48.879000, 2.309000, 'Trouvé au parc Monceau, oublié sur un banc.', '2026-05-20 17:10:00', 'theo@demo.pageslibres'),
+  ('liberation', 48.833000, 2.376000, 'Libéré devant la BnF François-Mitterrand.', '2026-05-28 13:15:00', 'theo@demo.pageslibres'),
   ('trouvaille', 48.846200, 2.337200, 'Trouvé au jardin du Luxembourg, sous le kiosque à musique.', '2026-06-03 18:40:00', 'theo@demo.pageslibres'),
+  ('liberation', 48.843000, 2.360000, 'Libéré au Jardin des Plantes, près de la ménagerie.', '2026-06-11 10:05:00', 'marie@demo.pageslibres'),
+  ('trouvaille', 48.872000, 2.365000, 'Trouvé au bord du canal Saint-Martin.', '2026-06-18 19:25:00', 'theo@demo.pageslibres'),
   ('liberation', 48.804900, 2.120400, 'Relâché à Versailles, dans les jardins du château.', '2026-06-24 11:05:00', 'theo@demo.pageslibres'),
+  ('trouvaille', 48.880900, 2.382000, 'Trouvé au parc des Buttes-Chaumont, au bord du lac.', '2026-06-30 15:50:00', 'marie@demo.pageslibres'),
+  ('liberation', 48.849000, 2.373000, 'Libéré sur la coulée verte René-Dumont.', '2026-07-07 12:00:00', 'marie@demo.pageslibres'),
+  ('trouvaille', 48.855500, 2.365500, 'Trouvé sous les arcades de la place des Vosges.', '2026-07-14 18:05:00', 'theo@demo.pageslibres'),
+  ('liberation', 48.863500, 2.327000, 'Libéré au jardin des Tuileries, près du bassin.', '2026-07-19 09:45:00', 'theo@demo.pageslibres'),
   ('trouvaille', 48.862000, 2.240000, 'Retrouvé au bois de Boulogne, abandonné sur un banc.', '2026-07-22 16:15:00', 'marie@demo.pageslibres'),
+  ('liberation', 48.886700, 2.343100, 'Libéré sur les marches du Sacré-Cœur, à Montmartre.', '2026-07-30 20:30:00', 'marie@demo.pageslibres'),
+  ('trouvaille', 48.841000, 2.320000, 'Trouvé à la gare Montparnasse, salle des Pas Perdus.', '2026-08-07 08:15:00', 'theo@demo.pageslibres'),
+  ('liberation', 48.858000, 2.346500, 'Libéré aux Halles, sur une borne du forum.', '2026-08-16 14:20:00', 'theo@demo.pageslibres'),
+  ('trouvaille', 48.833000, 2.433000, 'Trouvé au bois de Vincennes, sur un muret.', '2026-08-25 19:00:00', 'marie@demo.pageslibres'),
+  ('liberation', 48.838000, 2.418000, 'Relibéré au bord du lac Daumesnil.', '2026-09-02 10:40:00', 'marie@demo.pageslibres'),
+  ('trouvaille', 48.846200, 2.337500, 'Retrouvé au jardin du Luxembourg, sur une chaise verte.', '2026-09-09 17:55:00', 'theo@demo.pageslibres'),
   ('liberation', 48.822500, 2.337500, 'Relibéré au parc Montsouris, à l''ombre d''un cèdre.', '2026-09-16 08:30:00', 'marie@demo.pageslibres')
 ) AS m(type, lat, lon, msg, dt, email)
 JOIN utilisateur u ON u.email = m.email;
@@ -300,6 +366,79 @@ CROSS JOIN (VALUES
 JOIN utilisateur u ON u.email = m.email;
 
 -- ---------------------------------------------------------------------------
+-- 3.b Exemplaires et journaux des quarante livres de fond de catalogue
+--
+--     Écrit de façon déterministe plutôt qu'à la main : quarante journaux
+--     représenteraient plusieurs centaines de lignes pour un intérêt de
+--     démonstration nul. Rien n'est tiré au hasard — tout dérive de l'identifiant
+--     du livre — donc rejouer le fichier redonne exactement le même jeu.
+--
+--     Chaque journal commence par une libération, alterne libération et
+--     trouvaille, et se termine par une libération : l'exemplaire reste donc
+--     « en circulation ». Les dates s'étalent du 12/05 au 15/09/2026, comme le
+--     reste du jeu, et les lieux sont ceux du jeu curé.
+--
+--     Nombre de libérations : 1 à 3 pour l'essentiel, 5 et 7 pour quelques
+--     livres — le maximum du jeu (10) restant réservé à la vedette ci-dessus.
+-- ---------------------------------------------------------------------------
+
+-- Un exemplaire pour chaque livre qui n'en a pas encore : les dix livres curés
+-- plus haut en ont déjà un, ou deux.
+INSERT INTO exemplaire (id_livre, code_bcid, statut, date_creation)
+SELECT l.id_livre,
+       'PL-' || upper(substr(md5(l.id_livre::text || l.titre), 1, 5)) || '-FR',
+       'en_circulation'::statut_exemplaire,
+       date '2026-05-12'
+FROM livre l
+WHERE NOT EXISTS (SELECT 1 FROM exemplaire e WHERE e.id_livre = l.id_livre);
+
+-- Puis le journal de chaque exemplaire encore vierge de tout mouvement.
+WITH lieux(id, lat, lon, precision) AS (VALUES
+  (1, 48.844300, 2.374300, 'près de la gare de Lyon, sur un banc du hall.'),
+  (2, 48.846200, 2.337500, 'au jardin du Luxembourg, sous la grille.'),
+  (3, 48.858000, 2.346500, 'aux Halles, sur une borne du forum.'),
+  (4, 48.860600, 2.337600, 'sous la pyramide du Louvre.'),
+  (5, 48.886700, 2.343100, 'sur les marches du Sacré-Cœur.'),
+  (6, 48.833000, 2.376000, 'devant la BnF François-Mitterrand.'),
+  (7, 48.841000, 2.320000, 'à la gare Montparnasse, salle des Pas Perdus.'),
+  (8, 48.849000, 2.373000, 'sur la coulée verte René-Dumont.')
+),
+besoins AS (
+  SELECT e.id_exemplaire,
+         l.id_livre,
+         CASE
+           WHEN l.id_livre % 17 = 0 THEN 7
+           WHEN l.id_livre % 11 = 0 THEN 5
+           ELSE 1 + (l.id_livre % 3)
+         END AS nb_liberations
+  FROM exemplaire e
+  JOIN livre l ON l.id_livre = e.id_livre
+  WHERE NOT EXISTS (SELECT 1 FROM mouvement m WHERE m.id_exemplaire = e.id_exemplaire)
+),
+etapes AS (
+  SELECT b.id_exemplaire,
+         b.id_livre,
+         k AS numero,
+         k % 2 = 1 AS est_liberation,
+         ((k - 1) * 126) / greatest(2 * b.nb_liberations - 2, 1) AS jours
+  FROM besoins b
+  CROSS JOIN LATERAL generate_series(1, 2 * b.nb_liberations - 1) AS k
+)
+INSERT INTO mouvement (id_exemplaire, id_utilisateur, type_mouvement, latitude, longitude, message, date_mouvement)
+SELECT e.id_exemplaire,
+       u.id_utilisateur,
+       (CASE WHEN e.est_liberation THEN 'liberation' ELSE 'trouvaille' END)::type_mouvement,
+       v.lat,
+       v.lon,
+       (CASE WHEN e.est_liberation THEN 'Libéré ' ELSE 'Trouvé ' END) || v.precision,
+       date '2026-05-12' + e.jours
+FROM etapes e
+JOIN lieux v ON v.id = 1 + ((e.id_livre + e.numero) % 8)
+JOIN utilisateur u ON u.email = CASE WHEN e.numero % 2 = 1
+                                     THEN 'marie@demo.pageslibres'
+                                     ELSE 'theo@demo.pageslibres' END;
+
+-- ---------------------------------------------------------------------------
 -- 4. Recalage de la position courante
 --    Le trigger trg_maj_position_exemplaire met à jour exemplaire.position à
 --    chaque INSERT de mouvement — mais sur un chargement en masse, l'ordre de
@@ -427,35 +566,99 @@ WHERE NOT EXISTS (
 --
 --    Source : Open Library (covers.openlibrary.org) — sans clé ni quota. Google
 --    Books ne sert pas d'image pour ces éditions et son quota anonyme est vite
---    épuisé (429 constaté). Les ouvrages sans couverture connue restent à NULL :
---    la fiche n'affiche alors simplement pas d'image.
+--    épuisé (429 constaté) ; la seule qui vienne de Google est celle du livre
+--    créé par la recherche par ISBN.
 --
+--    La correspondance se fait sur le TITRE : les quarante livres de fond de
+--    catalogue n'ont pas d'ISBN (voir section 2).
 --    Idempotent : ne remplit qu'une couverture encore vide.
 -- ---------------------------------------------------------------------------
 UPDATE livre
 SET couverture_url = v.url
 FROM (VALUES
-  ('9782253096337', 'https://covers.openlibrary.org/b/isbn/9782253096337-M.jpg'),
-  ('9782266320481', 'https://covers.openlibrary.org/b/isbn/9782266320481-M.jpg'),
-  ('9782012101333', 'https://covers.openlibrary.org/b/isbn/9782012101333-M.jpg'),
-  ('9782070360024', 'https://covers.openlibrary.org/b/isbn/9782070360024-M.jpg'),
-  ('9782070612758', 'https://covers.openlibrary.org/b/isbn/9782070612758-M.jpg'),
-  ('9782253006268', 'https://covers.openlibrary.org/b/isbn/9782253006268-M.jpg')
-) AS v(isbn, url)
-WHERE livre.isbn = v.isbn
+  -- Les dix livres du jeu curé
+  ('Le Comte de Monte-Cristo', NULL),
+  ('Les Légendaires Saga Tome 1', 'https://books.google.com/books/content?id=FdJqzQEACAAJ&printsec=frontcover&img=1&zoom=2&source=gbs_api'),
+  ('Les Racines du ciel', NULL),
+  ('Le Petit Prince', 'https://covers.openlibrary.org/b/isbn/9782070612758-M.jpg'),
+  ('L''Étranger', 'https://covers.openlibrary.org/b/isbn/9782070360024-M.jpg'),
+  ('Notre-Dame de Paris', 'https://covers.openlibrary.org/b/isbn/9782253096337-M.jpg'),
+  ('Astérix le Gaulois', 'https://covers.openlibrary.org/b/isbn/9782012101333-M.jpg'),
+  ('Dune', 'https://covers.openlibrary.org/b/isbn/9782266320481-M.jpg'),
+  ('Le Mystère de la chambre jaune', 'https://covers.openlibrary.org/b/isbn/9782253006268-M.jpg'),
+  ('Le Grand Meaulnes', NULL),
+  -- Les quarante livres de fond de catalogue
+  ('Le Rouge et le Noir', 'https://covers.openlibrary.org/b/id/8231413-M.jpg'),
+  ('Madame Bovary', 'https://covers.openlibrary.org/b/id/12993424-M.jpg'),
+  ('Les Misérables', 'https://covers.openlibrary.org/b/id/12721865-M.jpg'),
+  ('Germinal', 'https://covers.openlibrary.org/b/id/8236935-M.jpg'),
+  ('Bel-Ami', 'https://covers.openlibrary.org/b/id/997432-M.jpg'),
+  ('Le Père Goriot', 'https://covers.openlibrary.org/b/id/15156928-M.jpg'),
+  ('La Chartreuse de Parme', 'https://covers.openlibrary.org/b/id/104382-M.jpg'),
+  ('Vingt mille lieues sous les mers', 'https://covers.openlibrary.org/b/id/6573517-M.jpg'),
+  ('Le Tour du monde en quatre-vingts jours', 'https://covers.openlibrary.org/b/id/6976035-M.jpg'),
+  ('Voyage au centre de la Terre', 'https://covers.openlibrary.org/b/id/5890987-M.jpg'),
+  ('L''Île mystérieuse', 'https://covers.openlibrary.org/b/id/1277096-M.jpg'),
+  ('Les Trois Mousquetaires', 'https://covers.openlibrary.org/b/id/11929973-M.jpg'),
+  ('Vingt ans après', 'https://covers.openlibrary.org/b/id/14564526-M.jpg'),
+  ('La Reine Margot', 'https://covers.openlibrary.org/b/id/14557277-M.jpg'),
+  ('Les Fleurs du mal', 'https://covers.openlibrary.org/b/id/8236412-M.jpg'),
+  ('Alcools', 'https://covers.openlibrary.org/b/id/4647361-M.jpg'),
+  ('Une saison en enfer', 'https://covers.openlibrary.org/b/id/4601563-M.jpg'),
+  ('Les Contemplations', 'https://covers.openlibrary.org/b/id/8247081-M.jpg'),
+  ('Cyrano de Bergerac', 'https://covers.openlibrary.org/b/id/8236320-M.jpg'),
+  ('Le Malade imaginaire', 'https://covers.openlibrary.org/b/id/8243180-M.jpg'),
+  ('L''Avare', 'https://covers.openlibrary.org/b/id/10776163-M.jpg'),
+  ('Le Misanthrope', 'https://covers.openlibrary.org/b/id/6523174-M.jpg'),
+  ('Antigone', 'https://covers.openlibrary.org/b/id/116843-M.jpg'),
+  ('La Peste', 'https://covers.openlibrary.org/b/id/13151272-M.jpg'),
+  ('La Chute', 'https://covers.openlibrary.org/b/id/8296477-M.jpg'),
+  ('Le Mythe de Sisyphe', 'https://covers.openlibrary.org/b/id/1014395-M.jpg'),
+  ('La Nausée', 'https://covers.openlibrary.org/b/id/9393973-M.jpg'),
+  ('Le Deuxième Sexe', 'https://covers.openlibrary.org/b/id/78169-M.jpg'),
+  ('L''Amant', 'https://covers.openlibrary.org/b/id/5401955-M.jpg'),
+  ('Moderato cantabile', 'https://covers.openlibrary.org/b/id/983837-M.jpg'),
+  ('La Vie devant soi', 'https://covers.openlibrary.org/b/id/10374575-M.jpg'),
+  ('Les Liaisons dangereuses', 'https://covers.openlibrary.org/b/id/5258265-M.jpg'),
+  ('Manon Lescaut', 'https://covers.openlibrary.org/b/id/8236918-M.jpg'),
+  ('La Princesse de Clèves', NULL),
+  ('Le Cid', 'https://covers.openlibrary.org/b/id/8236984-M.jpg'),
+  ('Andromaque', 'https://covers.openlibrary.org/b/id/8231426-M.jpg'),
+  ('Le Petit Nicolas', 'https://covers.openlibrary.org/b/id/12856967-M.jpg'),
+  ('Le Club des cinq', 'https://covers.openlibrary.org/b/id/962680-M.jpg'),
+  ('Harry Potter à l''école des sorciers', NULL),
+  ('Le Seigneur des anneaux', NULL)
+) AS v(titre, url)
+WHERE livre.titre = v.titre
+  AND v.url IS NOT NULL
   AND livre.couverture_url IS NULL;
 
 -- ============================================================================
 -- Contrôle rapide (à lancer à la main) :
 --
---   SELECT count(*) AS livres FROM livre;                       -- 10
---   SELECT count(*) AS exemplaires FROM exemplaire;              -- 12
+--   SELECT count(*) AS livres FROM livre;                        -- 50
+--   SELECT count(*) AS exemplaires FROM exemplaire;              -- 52
 --   SELECT count(*) AS en_circulation FROM exemplaire
---     WHERE statut = 'en_circulation';                           -- 10
+--     WHERE statut = 'en_circulation';                           -- 50
+--   SELECT count(*) AS mouvements FROM mouvement;                -- 200
 --   SELECT l.titre, count(*) FILTER (WHERE e.statut = 'en_circulation') AS dispo
 --     FROM livre l LEFT JOIN exemplaire e ON e.id_livre = l.id_livre
 --     GROUP BY l.titre ORDER BY dispo;                           -- aucune ligne à 0
 --   SELECT min(date_mouvement)::date, max(date_mouvement)::date
 --     FROM mouvement;                     -- 2026-05-12 → 2026-09-16
---   SELECT count(*) FROM obtention_badge;                       -- 4
+--   SELECT count(*) FILTER (WHERE couverture_url IS NOT NULL) AS avec,
+--          count(*) FILTER (WHERE couverture_url IS NULL) AS sans
+--     FROM livre;                                                -- 44 / 6
+--   SELECT count(*) FROM obtention_badge;                        -- 4
+--   SELECT count(*) FROM signalement WHERE statut = 'en_attente'; -- 4
+--
+-- Et la vedette de la démonstration, le journal le plus long du jeu :
+--
+--   SELECT count(*) FROM mouvement m JOIN exemplaire e USING (id_exemplaire)
+--     WHERE e.code_bcid = 'PL-7F8KT-FR';                         -- 19 étapes
+--   SELECT count(*) FROM mouvement m JOIN exemplaire e USING (id_exemplaire)
+--     WHERE e.code_bcid = 'PL-7F8KT-FR'
+--       AND m.type_mouvement = 'liberation';                     -- 10 libérations
+--
+-- Rejouer le fichier ne change aucun de ces chiffres (idempotence).
 -- ============================================================================
