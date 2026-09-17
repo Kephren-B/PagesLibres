@@ -31,7 +31,9 @@ export function BooksPage() {
   const [titre, setTitre] = useState('')
   const [categorie, setCategorie] = useState('')
   const [categories, setCategories] = useState([])
-  const [limite, setLimite] = useState(LIVRES_PAR_PAGE)
+  const [page, setPage] = useState(1)
+  // La dernière page reçue était-elle pleine ? Sinon, le catalogue est fini.
+  const [pageComplete, setPageComplete] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -46,7 +48,7 @@ export function BooksPage() {
   useEffect(() => {
     const minuteur = setTimeout(() => {
       setTitre(recherche)
-      setLimite(LIVRES_PAR_PAGE)
+      setPage(1)
     }, TEMPORISATION_SAISIE)
 
     return () => clearTimeout(minuteur)
@@ -55,7 +57,7 @@ export function BooksPage() {
   // Changer de catégorie repart de la première page de résultats.
   function filtrerCategorie(prochaineCategorie) {
     setCategorie(prochaineCategorie)
-    setLimite(LIVRES_PAR_PAGE)
+    setPage(1)
   }
 
   useEffect(() => {
@@ -79,14 +81,30 @@ export function BooksPage() {
   }, [])
 
   // F8 : catalogue — recherche par titre, filtre par catégorie, pages successives.
+  // La réponse JSON des collections ne porte pas le total : on s'arrête donc à la
+  // première page incomplète.
   useEffect(() => {
+    let annule = false
     setLoading(true)
     api
-      .listLivres(requeteLivres({ titre, categorie, limite }))
-      .then((data) => setLivres(Array.isArray(data) ? data : []))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [titre, categorie, limite])
+      .listLivres(requeteLivres({ titre, categorie, limite: LIVRES_PAR_PAGE, page }))
+      .then((donnees) => {
+        if (annule) return
+        const lot = Array.isArray(donnees) ? donnees : []
+        setPageComplete(lot.length === LIVRES_PAR_PAGE)
+        setLivres((precedents) => (page === 1 ? lot : [...precedents, ...lot]))
+      })
+      .catch((err) => {
+        if (!annule) setError(err.message)
+      })
+      .finally(() => {
+        if (!annule) setLoading(false)
+      })
+
+    return () => {
+      annule = true
+    }
+  }, [titre, categorie, page])
 
   // F4 : carte de proximité. F8 : mêmes filtres catégorie et statut.
   useEffect(() => {
@@ -232,7 +250,7 @@ export function BooksPage() {
       )}
 
       <h2>Tout le catalogue</h2>
-      {!loading && <p className="compteur">{livres.length} livre(s) affiché(s)</p>}
+      {livres.length > 0 && <p className="compteur">{livres.length} livre(s) affiché(s)</p>}
       {error && <p className="error">{error}</p>}
       {loading && <p>Chargement…</p>}
 
@@ -259,8 +277,13 @@ export function BooksPage() {
         )}
       </ul>
 
-      {!loading && livres.length === limite && (
-        <button type="button" className="voir-plus" onClick={() => setLimite(limite + LIVRES_PAR_PAGE)}>
+      {pageComplete && (
+        <button
+          type="button"
+          className="voir-plus"
+          disabled={loading}
+          onClick={() => setPage((precedente) => precedente + 1)}
+        >
           Voir plus de livres
           <IconeChevron />
         </button>

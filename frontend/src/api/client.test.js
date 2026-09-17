@@ -21,6 +21,12 @@ describe('requeteLivres', () => {
     expect(requeteLivres({ limite: 6 })).toBe('?itemsPerPage=6')
   })
 
+  it('avance par numéro de page plutôt qu\'en grossissant la taille de page', () => {
+    // Page 1 = valeur par défaut de l'API, on ne l'écrit pas.
+    expect(requeteLivres({ limite: 6, page: 1 })).toBe('?itemsPerPage=6')
+    expect(requeteLivres({ limite: 6, page: 3 })).toBe('?itemsPerPage=6&page=3')
+  })
+
   it('combine recherche, catégorie et pagination', () => {
     expect(requeteLivres({ titre: 'Dune', categorie: 'Science-fiction', limite: 12 })).toBe(
       '?titre=Dune&categorie=Science-fiction&itemsPerPage=12',

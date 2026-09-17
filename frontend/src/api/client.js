@@ -48,12 +48,18 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
 /**
  * Requête du catalogue : recherche par titre, filtre par catégorie (F8) et
  * pagination. Fonction pure, couverte par client.test.js.
+ *
+ * La pagination avance par numéro de page, et non en demandant à chaque fois
+ * davantage d'éléments : l'API plafonne `itemsPerPage` (30), si bien qu'au-delà
+ * elle renvoie moins que demandé — le catalogue s'arrêtait alors en silence, le
+ * bouton « Voir plus » disparu et les livres suivants inaccessibles.
  */
-export function requeteLivres({ titre = '', categorie = '', limite = null } = {}) {
+export function requeteLivres({ titre = '', categorie = '', limite = null, page = null } = {}) {
   const parametres = new URLSearchParams()
   if (titre) parametres.set('titre', titre)
   if (categorie) parametres.set('categorie', categorie)
   if (limite) parametres.set('itemsPerPage', String(limite))
+  if (page && page > 1) parametres.set('page', String(page))
   const requete = parametres.toString()
   return requete ? `?${requete}` : ''
 }

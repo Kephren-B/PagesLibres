@@ -525,7 +525,10 @@
   border: 1px solid var(--bordure);
   padding: 0.6rem 1.4rem;
 }
-.voir-plus:hover { border-color: var(--tampon); background: var(--tampon-doux); }
+.voir-plus:not(:disabled):hover { border-color: var(--tampon); background: var(--tampon-doux); }
+/* Pendant le chargement de la page suivante, le bouton reste en place mais inactif
+   (contrôle désactivé : hors du périmètre de contraste AA). */
+.voir-plus:disabled { opacity: 0.6; cursor: default; }
 
 /* ===== Responsive ===== */
 @media (max-width: 640px) {
