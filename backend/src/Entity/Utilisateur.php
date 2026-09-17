@@ -18,6 +18,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\PasswordStrength;
 
 /**
  * Inscription publique (POST), lecture publique du profil sans l'email
@@ -70,9 +71,32 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
      * Transitoire, jamais persisté tel quel : hashé par UtilisateurProcessor
      * via UserPasswordHasherInterface avant écriture dans motDePasseHash.
      * Écriture seule (jamais dans le groupe de lecture).
+     *
+     * Politique de robustesse (Jalon 5, § IX) — trois contrôles :
+     *
+     * · `min: 8` est un plancher, pas une politique : « 12345678 » le passait ;
+     * · `PasswordStrength(minScore: STRONG)` exige au moins 3 sur 4 selon
+     *   l'estimation entropique de Symfony. Mesuré : « 12345678 », « motdepasse »,
+     *   « azertyuiop » et « Admin2026! » sont refusés ; le mot de passe du jeu de
+     *   démonstration « DemoPagesLibres2026! » atteint 4 (VERY_STRONG), la démo
+     *   reste donc utilisable ;
+     * · `max: 128` borne le travail de hachage : Argon2id lit la chaîne entière,
+     *   un mot de passe démesuré coûterait de la mémoire et du temps à chaque
+     *   tentative (faculté de déni de service).
+     *
+     * `NotCompromisedPassword` interroge l'API publique « Pwned Passwords » par
+     * préfixe de hachage — le mot de passe n'est jamais transmis, seules les 5
+     * premiers caractères de son empreinte SHA-1 le sont (k-anonymat).
+     * `skipOnError: true` : si l'API est injoignable, on n'empêche pas une
+     * inscription — la disponibilité d'un service tiers ne doit pas bloquer le
+     * nôtre. Contrepartie assumée : un mot de passe fuité passe quand l'API est
+     * hors ligne, et l'appel sort du réseau (à documenter comme la clé Google
+     * Books).
      */
     #[Assert\NotBlank]
-    #[Assert\Length(min: 8)]
+    #[Assert\Length(min: 8, max: 128)]
+    #[Assert\PasswordStrength(minScore: PasswordStrength::STRENGTH_STRONG)]
+    #[Assert\NotCompromisedPassword(skipOnError: true)]
     #[Groups(['utilisateur:write'])]
     private ?string $plainPassword = null;
 
