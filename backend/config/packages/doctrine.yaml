@@ -36,6 +36,14 @@ doctrine:
         identity_generation_preferences:
             Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
         auto_mapping: true
+
+        # UNACCENT(chaîne) rend la fonction `unaccent` de PostgreSQL visible
+        # depuis le DQL, qui ne connaît que ses propres fonctions. Utilisée par
+        # App\Filter\RechercheTexteFilter (recherche sans accents, F8).
+        dql:
+            string_functions:
+                unaccent: App\Doctrine\FonctionUnaccent
+
         mappings:
             App:
                 type: attribute

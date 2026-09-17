@@ -1,6 +1,8 @@
 -- PagesLibres — Modèle Physique de Données (PostgreSQL 18)
 
 CREATE EXTENSION IF NOT EXISTS postgis;
+-- Recherche insensible aux accents (F8) : unaccent('Étranger') = 'Etranger'.
+CREATE EXTENSION IF NOT EXISTS unaccent;
 
 CREATE TYPE role_utilisateur AS ENUM ('membre', 'admin');
 CREATE TYPE statut_exemplaire AS ENUM ('en_circulation', 'trouve', 'signale', 'retire');

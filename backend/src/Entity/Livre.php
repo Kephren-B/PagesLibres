@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
+use App\Filter\RechercheTexteFilter;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -34,7 +35,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 // des stratégies (ipartial / iexact) rend la comparaison insensible à la casse :
 // SearchFilter enveloppe alors les deux côtés dans LOWER(). Sans lui, une
 // recherche en minuscules (« dune ») ne renvoyait rien.
-#[ApiFilter(SearchFilter::class, properties: ['titre' => 'ipartial', 'auteur' => 'ipartial', 'categorie' => 'iexact', 'isbn' => 'exact'])]
+//
+// Le texte passe désormais par un filtre dédié, car « ipartial » ne neutralise
+// que la casse : « etranger » ne trouvait pas « L'Étranger ». RechercheTexteFilter
+// ajoute unaccent() des deux côtés de la comparaison, et sait aussi poser une
+// égalité — c'est le cas de `categorie`. Seul `isbn` reste sur le SearchFilter.
+#[ApiFilter(SearchFilter::class, properties: ['isbn' => 'exact'])]
+#[ApiFilter(RechercheTexteFilter::class, properties: ['titre' => 'partial', 'auteur' => 'partial', 'categorie' => 'exact'])]
 class Livre
 {
     #[ORM\Id]

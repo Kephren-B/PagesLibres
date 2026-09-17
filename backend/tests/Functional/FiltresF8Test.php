@@ -110,6 +110,73 @@ final class FiltresF8Test extends ApiTestCase
     }
 
     /**
+     * F8 — la recherche doit ignorer la casse ET les accents.
+     *
+     * « etranger » ne trouvait pas « L'Étranger » : la stratégie `ipartial` d'API
+     * Platform n'enveloppe les deux côtés que dans LOWER(). Le filtre maison
+     * ajoute unaccent(), de chaque côté de la comparaison.
+     */
+    public function testRechercheInsensibleALaCasseEtAuxAccents(): void
+    {
+        $client = static::createClient();
+        $suffix = bin2hex(random_bytes(4));
+        $auth = $this->authentifier($client, $suffix);
+
+        // Le suffixe aléatoire reste ASCII : seules les parties accentuées sont
+        // éprouvées, et le titre reste unique d'une exécution à l'autre.
+        $livre = $this->creerLivreEtExemplaireLibere(
+            $client,
+            $auth,
+            "Éléonore et les Misérables {$suffix}",
+            "Théâtre-{$suffix}",
+            "F8C-{$suffix}",
+            self::LAT_PARIS,
+            self::LON_PARIS,
+            "Émile Zola-{$suffix}",
+        );
+
+        $requete = static fn (array $parametres): string => '?' . http_build_query($parametres);
+
+        // --- Titre : sans accent, en minuscules puis en majuscules ---
+        self::assertSame(
+            [$livre],
+            $this->idsLivres($client, $auth, $requete(['titre' => "eleonore et les miserables {$suffix}"])),
+            'Une recherche sans accent doit trouver un titre accentué.',
+        );
+        self::assertSame(
+            [$livre],
+            $this->idsLivres($client, $auth, $requete(['titre' => "ELEONORE ET LES MISERABLES {$suffix}"])),
+        );
+
+        // --- Titre : accentué à l'identique, le cas « normal » doit continuer de marcher ---
+        self::assertSame(
+            [$livre],
+            $this->idsLivres($client, $auth, $requete(['titre' => "Éléonore et les Misérables {$suffix}"])),
+        );
+
+        // --- Auteur : « emile zola-… » doit trouver « Émile Zola-… » ---
+        self::assertSame(
+            [$livre],
+            $this->idsLivres($client, $auth, $requete(['auteur' => "emile zola-{$suffix}"])),
+        );
+
+        // --- Catégorie : égalité, donc insensible aux accents mais pas partielle ---
+        self::assertSame(
+            [$livre],
+            $this->idsLivres($client, $auth, $requete(['categorie' => "theatre-{$suffix}"])),
+            'Une catégorie accentuée doit se trouver sans accent.',
+        );
+        self::assertSame(
+            [],
+            $this->idsLivres($client, $auth, $requete(['categorie' => "theat-{$suffix}"])),
+            'La catégorie reste une égalité : un préfixe ne doit rien renvoyer.',
+        );
+
+        // --- Contrôle : une requête sans rapport ne remonte rien ---
+        self::assertSame([], $this->idsLivres($client, $auth, $requete(['titre' => "zzz-{$suffix}"])));
+    }
+
+    /**
      * @return array{headers: array<string, string>}
      */
     private function authentifier(Client $client, string $suffix): array
@@ -148,10 +215,11 @@ final class FiltresF8Test extends ApiTestCase
         string $bcid,
         string $lat,
         string $lon,
+        string $auteur = 'Suite F8',
     ): int {
         $client->request('POST', '/api/livres', $auth + ['json' => [
             'titre' => $titre,
-            'auteur' => 'Suite F8',
+            'auteur' => $auteur,
             'categorie' => $categorie,
         ]]);
         self::assertResponseStatusCodeSame(201);
