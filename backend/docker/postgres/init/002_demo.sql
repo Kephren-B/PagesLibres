@@ -419,6 +419,32 @@ WHERE NOT EXISTS (
   WHERE o.id_utilisateur = u.id_utilisateur AND o.id_badge = b.id_badge
 );
 
+-- ---------------------------------------------------------------------------
+-- 7. Couvertures du jeu de démonstration
+--    Les livres sont insérés en SQL, donc sans passer par la recherche par ISBN
+--    (F2) qui, elle, renseigne la couverture. On la fournit ici pour que la
+--    fiche livre en montre une.
+--
+--    Source : Open Library (covers.openlibrary.org) — sans clé ni quota. Google
+--    Books ne sert pas d'image pour ces éditions et son quota anonyme est vite
+--    épuisé (429 constaté). Les ouvrages sans couverture connue restent à NULL :
+--    la fiche n'affiche alors simplement pas d'image.
+--
+--    Idempotent : ne remplit qu'une couverture encore vide.
+-- ---------------------------------------------------------------------------
+UPDATE livre
+SET couverture_url = v.url
+FROM (VALUES
+  ('9782253096337', 'https://covers.openlibrary.org/b/isbn/9782253096337-M.jpg'),
+  ('9782266320481', 'https://covers.openlibrary.org/b/isbn/9782266320481-M.jpg'),
+  ('9782012101333', 'https://covers.openlibrary.org/b/isbn/9782012101333-M.jpg'),
+  ('9782070360024', 'https://covers.openlibrary.org/b/isbn/9782070360024-M.jpg'),
+  ('9782070612758', 'https://covers.openlibrary.org/b/isbn/9782070612758-M.jpg'),
+  ('9782253006268', 'https://covers.openlibrary.org/b/isbn/9782253006268-M.jpg')
+) AS v(isbn, url)
+WHERE livre.isbn = v.isbn
+  AND livre.couverture_url IS NULL;
+
 -- ============================================================================
 -- Contrôle rapide (à lancer à la main) :
 --

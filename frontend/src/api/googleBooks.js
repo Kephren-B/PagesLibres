@@ -54,3 +54,25 @@ export async function rechercherParIsbn(isbn) {
     couvertureUrl: info.imageLinks?.thumbnail ?? null,
   }
 }
+
+/**
+ * Normalise une URL de couverture avant affichage.
+ *
+ * Deux corrections, apprises à l'usage :
+ *   · Google Books renvoie ses vignettes en `http://` ; sur une page servie en
+ *     HTTPS, le navigateur bloque ce contenu mixte, et la CSP de production
+ *     n'autorise de toute façon que `https:` ;
+ *   · `zoom=1` ne fournit que 128 px, insuffisant pour une fiche : on demande
+ *     `zoom=2` (256 px), net sur les écrans haute densité.
+ *
+ * Les URL d'autres sources (Open Library, pour le jeu de démonstration) ne sont
+ * concernées par aucun de ces motifs et passent inchangées.
+ */
+export function urlCouverture(url) {
+  const nettoyee = String(url ?? '').trim()
+  if (nettoyee === '') return null
+
+  return nettoyee
+    .replace(/^http:/i, 'https:')
+    .replace(/([?&]zoom=)1(?=&|$)/i, (_correspondance, prefixe) => `${prefixe}2`)
+}

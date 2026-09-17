@@ -1,5 +1,40 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { rechercherParIsbn, IsbnNonTrouveError } from './googleBooks'
+import { rechercherParIsbn, IsbnNonTrouveError, urlCouverture } from './googleBooks'
+
+describe('urlCouverture', () => {
+  it('ne renvoie rien quand il n\'y a pas de couverture', () => {
+    expect(urlCouverture(null)).toBeNull()
+    expect(urlCouverture(undefined)).toBeNull()
+    expect(urlCouverture('')).toBeNull()
+    expect(urlCouverture('   ')).toBeNull()
+  })
+
+  it('passe en HTTPS (contenu mixte et CSP de production)', () => {
+    expect(urlCouverture('http://books.google.com/books/content?id=X&printsec=frontcover')).toBe(
+      'https://books.google.com/books/content?id=X&printsec=frontcover',
+    )
+  })
+
+  it('demande une vignette deux fois plus grande que zoom=1', () => {
+    expect(urlCouverture('https://books.google.com/books/content?id=X&zoom=1')).toBe(
+      'https://books.google.com/books/content?id=X&zoom=2',
+    )
+    expect(urlCouverture('https://books.google.com/books/content?zoom=1')).toBe(
+      'https://books.google.com/books/content?zoom=2',
+    )
+  })
+
+  it('laisse intactes les autres sources et les autres valeurs de zoom', () => {
+    const openLibrary = 'https://covers.openlibrary.org/b/isbn/9782070612758-M.jpg'
+    expect(urlCouverture(openLibrary)).toBe(openLibrary)
+    expect(urlCouverture('https://books.google.com/books/content?id=X&zoom=2')).toBe(
+      'https://books.google.com/books/content?id=X&zoom=2',
+    )
+    expect(urlCouverture('https://books.google.com/books/content?id=X&zoom=10')).toBe(
+      'https://books.google.com/books/content?id=X&zoom=10',
+    )
+  })
+})
 
 const REPONSE_GATSBY = {
   items: [

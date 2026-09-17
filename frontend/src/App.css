@@ -48,6 +48,23 @@
 .page > p { max-width: 72ch; }
 .subtitle { color: var(--encre-doux); font-size: 1.05rem; margin-bottom: 1.4rem; }
 
+/* ===== Fiche livre : en-tête avec couverture ===== */
+/* La couverture n'est affichée que si l'ouvrage en a une (elle vient de l'ISBN,
+   ou de rien du tout). `min-width: 0` sur le bloc texte évite qu'un titre long
+   ne fasse déborder la ligne flex. */
+.livre-entete { display: flex; align-items: flex-start; gap: 1.5rem; }
+.livre-entete-texte { min-width: 0; }
+.livre-couverture {
+  flex-shrink: 0;
+  width: 150px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--bordure);
+  background: var(--surface);
+  box-shadow: var(--ombre);
+}
+
 /* ===== Listes / cartes ===== */
 .book-list,
 .exemplaire-list,
@@ -516,6 +533,9 @@
   .page { padding: 1.4rem 1rem 3rem; }
   /* Mobile first : la carte ne doit pas manger tout l'écran avant le catalogue. */
   .home-map { height: 300px; }
+  /* La couverture reste visible sans prendre la moitié de l'écran. */
+  .livre-entete { gap: 1rem; }
+  .livre-couverture { width: 104px; }
 }
 
 /* Desktop : le catalogue se déploie sur deux colonnes, l'accueil reste court. */

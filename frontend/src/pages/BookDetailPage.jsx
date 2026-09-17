@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '../api/client'
+import { urlCouverture } from '../api/googleBooks'
 import { useAuth } from '../context/AuthContext'
 import { JourneyMap } from '../components/JourneyMap'
 
@@ -32,10 +33,14 @@ export function BookDetailPage() {
   const [note, setNote] = useState('5')
   const [avisTexte, setAvisTexte] = useState('')
   const [commentContenu, setCommentContenu] = useState('')
+  // Une couverture peut pointer vers une image disparue : on la retire plutôt
+  // que d'afficher une icône cassée.
+  const [couvertureInvalide, setCouvertureInvalide] = useState(false)
 
   const reload = useCallback(async () => {
     const livreData = await api.getLivre(id)
     setLivre(livreData)
+    setCouvertureInvalide(false)
     const exemplairesData = await api.listExemplaires(`?livre=/api/livres/${id}`)
     setExemplaires(Array.isArray(exemplairesData) ? exemplairesData : exemplairesData.member ?? [])
 
@@ -145,11 +150,26 @@ export function BookDetailPage() {
       }))
     : []
 
+  const couverture = livre.couvertureUrl ? urlCouverture(livre.couvertureUrl) : null
+
   return (
     <div className="page">
-      <h1>{livre.titre}</h1>
-      <p className="subtitle">{livre.auteur} — {livre.categorie}{livre.anneePublication ? ` (${livre.anneePublication})` : ''}</p>
-      {livre.resume && <p>{livre.resume}</p>}
+      <div className="livre-entete">
+        {couverture && !couvertureInvalide && (
+          <img
+            className="livre-couverture"
+            src={couverture}
+            alt={`Couverture de « ${livre.titre} »`}
+            loading="lazy"
+            onError={() => setCouvertureInvalide(true)}
+          />
+        )}
+        <div className="livre-entete-texte">
+          <h1>{livre.titre}</h1>
+          <p className="subtitle">{livre.auteur} — {livre.categorie}{livre.anneePublication ? ` (${livre.anneePublication})` : ''}</p>
+          {livre.resume && <p>{livre.resume}</p>}
+        </div>
+      </div>
 
       {error && <p className="error">{error}</p>}
 
