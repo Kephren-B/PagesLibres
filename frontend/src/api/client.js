@@ -1,3 +1,5 @@
+import { bornesDePeriode } from '../historique'
+
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8090'
 const TOKEN_KEY = 'pageslibres_token'
 
@@ -145,13 +147,16 @@ export const api = {
   /**
    * F9 : historique personnel.
    *
-   * Le tri est demandé à l'API, jamais refait côté client : une page est déjà
-   * découpée, donc trier la liste affichée ne trierait que cette page. Le
-   * `OrderFilter` remplaçant l'ordre par défaut au lieu de s'y ajouter, les
-   * deux critères partent ensemble — sans le second, deux mouvements de même
-   * date s'ordonneraient au hasard.
+   * Le tri et les filtres sont demandés à l'API, jamais refaits côté client :
+   * une page est déjà découpée, donc trier ou filtrer la liste affichée ne
+   * porterait que sur cette page. Le `OrderFilter` remplaçant l'ordre par
+   * défaut au lieu de s'y ajouter, les deux critères partent ensemble — sans le
+   * second, deux mouvements de même date s'ordonneraient au hasard.
    */
-  listMesMouvements: (utilisateurIri, { page = 1, sens = 'desc', taille = 20 } = {}) => {
+  listMesMouvements: (
+    utilisateurIri,
+    { page = 1, sens = 'desc', taille = 20, type = '', du = '', au = '' } = {},
+  ) => {
     const parametres = new URLSearchParams({
       utilisateur: utilisateurIri,
       itemsPerPage: String(taille),
@@ -159,6 +164,13 @@ export const api = {
       'order[idMouvement]': sens,
     })
     if (page > 1) parametres.set('page', String(page))
+    if (type) parametres.set('typeMouvement', type)
+
+    // Bornes de jours **locaux** converties en instants UTC, intervalle
+    // semi-ouvert [du 00:00, lendemain du dernier jour[.
+    const { after, avant } = bornesDePeriode({ du, au })
+    if (after) parametres.set('dateMouvement[after]', after)
+    if (avant) parametres.set('dateMouvement[strictly_before]', avant)
 
     return request(`/api/mouvements?${parametres}`, { auth: true })
   },

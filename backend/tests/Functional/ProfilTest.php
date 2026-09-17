@@ -135,6 +135,49 @@ final class ProfilTest extends ApiTestCase
         self::assertSame('membre', $profil['role']);
     }
 
+    /**
+     * Filtres de l'historique. Le type existait déjà ; la date, non — mesuré,
+     * `?dateMouvement[before]=…` renvoyait les 120 mouvements du jeu de
+     * démonstration sans filtrer, comme `order[...]` avant lui.
+     */
+    public function testHistoriqueFiltrableParTypeEtParDate(): void
+    {
+        $client = static::createClient();
+        $suffix = bin2hex(random_bytes(4));
+        [$auth, $utilisateur] = $this->creerEtAuthentifier($client, $suffix);
+
+        for ($rang = 0; $rang < 3; ++$rang) {
+            $this->creerMouvement($client, $auth, $suffix, $rang);
+        }
+
+        $chemin = "/api/mouvements?utilisateur=/api/utilisateurs/{$utilisateur}&itemsPerPage=30";
+        $aujourdhui = (new \DateTimeImmutable('today'))->format('Y-m-d');
+        $demain = (new \DateTimeImmutable('tomorrow'))->format('Y-m-d');
+
+        $compter = function (string $filtre) use ($client, $auth, $chemin): int {
+            $client->request('GET', $chemin . $filtre, $auth);
+            self::assertResponseIsSuccessful();
+
+            return count($this->decoder($client));
+        };
+
+        // Type : les trois mouvements créés sont des libérations.
+        self::assertSame(3, $compter('&typeMouvement=liberation'));
+        self::assertSame(0, $compter('&typeMouvement=trouvaille'));
+
+        // Date : ils datent d'aujourd'hui, donc inclus dans la journée.
+        // `strictly_before` sur aujourd'hui doit au contraire les exclure tous,
+        // quel que soit l'instant où le test s'exécute.
+        self::assertSame(3, $compter("&dateMouvement[after]={$aujourdhui}"));
+        self::assertSame(3, $compter("&dateMouvement[strictly_before]={$demain}"));
+        self::assertSame(0, $compter("&dateMouvement[strictly_before]={$aujourdhui}"));
+        self::assertSame(0, $compter("&dateMouvement[strictly_after]={$demain}"));
+
+        // Et les deux critères se combinent.
+        self::assertSame(3, $compter("&typeMouvement=liberation&dateMouvement[after]={$aujourdhui}"));
+        self::assertSame(0, $compter("&typeMouvement=trouvaille&dateMouvement[after]={$aujourdhui}"));
+    }
+
     public function testPseudoDejaPrisRefuse(): void
     {
         $client = static::createClient();

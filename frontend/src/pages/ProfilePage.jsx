@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
+import { FILTRES_TYPE } from '../historique'
 
 const LABELS_MOUVEMENT = {
   liberation: 'Libération',
@@ -24,6 +25,12 @@ export function ProfilePage() {
   const [obtentions, setObtentions] = useState([])
   const [catalogue, setCatalogue] = useState([])
   const [sens, setSens] = useState('desc')
+  // Filtres de l'historique : un type, et une période bornée par deux jours
+  // locaux. Ils partent tous vers l'API — filtrer ici ne filtrerait que la
+  // page affichée.
+  const [type, setType] = useState('')
+  const [du, setDu] = useState('')
+  const [au, setAu] = useState('')
   const [page, setPage] = useState(1)
   const [pageComplete, setPageComplete] = useState(false)
   const [chargement, setChargement] = useState(false)
@@ -73,6 +80,9 @@ export function ProfilePage() {
         page,
         sens,
         taille: MOUVEMENTS_PAR_PAGE,
+        type,
+        du,
+        au,
       })
       .then((donnees) => {
         if (annule) return
@@ -90,13 +100,27 @@ export function ProfilePage() {
     return () => {
       annule = true
     }
-  }, [profil, page, sens])
+  }, [profil, page, sens, type, du, au])
 
   // Changer de sens repart de la première page : sans cela, on empilerait la
   // première page d'un sens sur la dernière page de l'autre.
   function changerTri(nouveauSens) {
     if (nouveauSens === sens) return
     setSens(nouveauSens)
+    setPage(1)
+  }
+
+  // Même raison pour un filtre : la page 3 d'un filtre ne veut rien dire une
+  // fois le filtre changé.
+  function filtrer(poser, valeur) {
+    poser(valeur)
+    setPage(1)
+  }
+
+  function reinitialiserFiltres() {
+    setType('')
+    setDu('')
+    setAu('')
     setPage(1)
   }
 
@@ -138,6 +162,8 @@ export function ProfilePage() {
     const rang = (badge) => (obtentionDe(badge) ? 0 : 1)
     return rang(a) - rang(b) || a.idBadge - b.idBadge
   })
+
+  const filtresActifs = Boolean(type || du || au)
 
   return (
     <div className="page page-profile">
@@ -214,21 +240,78 @@ export function ProfilePage() {
       </ul>
 
       <h2>Mon historique</h2>
-      <div className="history-outils" role="group" aria-label="Trier l'historique">
-        {TRIS.map((tri) => (
-          <button
-            key={tri.valeur}
-            type="button"
-            className="pastille"
-            aria-pressed={tri.valeur === sens}
-            onClick={() => changerTri(tri.valeur)}
-          >
-            {tri.libelle}
-          </button>
-        ))}
+
+      <div className="history-outils">
+        <div className="filtre-groupe">
+          <span className="filtre-libelle" id="history-tri">Ordre</span>
+          <div className="filtre-valeurs" role="group" aria-labelledby="history-tri">
+            {TRIS.map((tri) => (
+              <button
+                key={tri.valeur}
+                type="button"
+                className="pastille"
+                aria-pressed={tri.valeur === sens}
+                onClick={() => changerTri(tri.valeur)}
+              >
+                {tri.libelle}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filtre-groupe">
+          <span className="filtre-libelle" id="history-type">Type</span>
+          <div className="filtre-valeurs" role="group" aria-labelledby="history-type">
+            {FILTRES_TYPE.map((filtre) => (
+              <button
+                key={filtre.valeur || 'tout'}
+                type="button"
+                className="pastille"
+                aria-pressed={filtre.valeur === type}
+                onClick={() => filtrer(setType, filtre.valeur)}
+              >
+                {filtre.libelle}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filtre-groupe">
+          <label className="filtre-libelle" htmlFor="history-du">Du</label>
+          <input
+            id="history-du"
+            type="date"
+            value={du}
+            onChange={(evenement) => filtrer(setDu, evenement.target.value)}
+          />
+        </div>
+
+        <div className="filtre-groupe">
+          <label className="filtre-libelle" htmlFor="history-au">Au</label>
+          <input
+            id="history-au"
+            type="date"
+            value={au}
+            onChange={(evenement) => filtrer(setAu, evenement.target.value)}
+          />
+        </div>
+
+        {filtresActifs && (
+          <div className="filtre-groupe">
+            <button type="button" className="pastille" onClick={reinitialiserFiltres}>
+              Réinitialiser les filtres
+            </button>
+          </div>
+        )}
       </div>
 
-      {mouvements.length === 0 && !chargement && <p>Aucun mouvement pour l'instant.</p>}
+      {mouvements.length === 0 && !chargement && (
+        <p>
+          {filtresActifs
+            ? 'Aucun mouvement ne correspond à ces filtres.'
+            : 'Aucun mouvement pour l’instant.'}
+        </p>
+      )}
       <ul className="history-list">
         {mouvements.map((mouvement) => (
           <li key={mouvement.idMouvement} className="history-item">

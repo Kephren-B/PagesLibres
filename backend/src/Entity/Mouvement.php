@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
@@ -44,6 +45,20 @@ use Symfony\Component\Validator\Constraints as Assert;
  * · `OrderFilter` rend le tri pilotable par le client. Le client doit alors
  *   fournir les **deux** critères, le filtre remplaçant l'ordre par défaut
  *   au lieu de s'y ajouter.
+ *
+ * Filtres de l'historique (F9) — mesuré sur les 120 mouvements du jeu de
+ * démonstration :
+ * · `typeMouvement` existait déjà (SearchFilter, exact) : 7 trouvailles et
+ *   113 libérations ;
+ * · le filtre de **date** manquait — `?dateMouvement[before]=…` et `[after]=…`
+ *   étaient ignorés en silence, comme `order[...]` avant lui. `DateFilter`
+ *   l'expose (`before`/`after` inclusifs, `strictly_before` exclusif).
+ *
+ * Convention retenue côté client : un intervalle **semi-ouvert**
+ * `[début, lendemain du dernier jour[`, exprimé en instants UTC. Les bornes
+ * sont calculées depuis le jour **local** de l'utilisateur : `date_mouvement`
+ * est un timestamp, donc « du 16 septembre » doit désigner la journée de Paris,
+ * pas celle de Greenwich — sinon un mouvement du soir se rangerait la veille.
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'mouvement')]
@@ -60,6 +75,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 #[ApiFilter(SearchFilter::class, properties: ['utilisateur' => 'exact', 'typeMouvement' => 'exact'])]
 #[ApiFilter(OrderFilter::class, properties: ['dateMouvement', 'idMouvement'])]
+#[ApiFilter(DateFilter::class, properties: ['dateMouvement'])]
 class Mouvement
 {
     #[ORM\Id]
