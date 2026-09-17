@@ -119,6 +119,31 @@ final class LiberationExemplaireTest extends ApiTestCase
         self::assertCount(1, $trouve, 'Le BCID généré doit permettre de retrouver l\'exemplaire.');
     }
 
+    /**
+     * Le code se recopie depuis un livre, souvent en minuscules sur un clavier
+     * de téléphone : la recherche doit rester tolérante à la casse, sinon la
+     * déclaration de trouvaille échoue sur un code qui existe pourtant.
+     */
+    public function testLaRechercheParCodeIgnoreLaCasse(): void
+    {
+        $client = static::createClient();
+        $suffix = bin2hex(random_bytes(4));
+        $auth = $this->authentifier($client, $suffix);
+        $livre = $this->creerLivre($client, $auth, $suffix);
+
+        $client->request('POST', '/api/exemplaires', $auth + ['json' => [
+            'livre' => "/api/livres/{$livre}",
+        ]]);
+        self::assertResponseStatusCodeSame(201);
+        $code = $this->decoder($client)['codeBcid'];
+
+        foreach ([$code, strtolower($code), ucfirst(strtolower($code))] as $variante) {
+            $client->request('GET', "/api/exemplaires?codeBcid={$variante}", $auth);
+            self::assertResponseIsSuccessful();
+            self::assertCount(1, $this->decoder($client), "Le code « {$variante} » doit être reconnu.");
+        }
+    }
+
     /** @return array{headers: array<string, string>} */
     private function authentifier(Client $client, string $suffix): array
     {

@@ -35,10 +35,16 @@ export function DeclareTrouvaillePage() {
     setBusy(true)
     try {
       // F5 : saisie manuelle du code BCID — pas de scan, hors périmètre.
-      const resultats = await api.listExemplaires(`?codeBcid=${encodeURIComponent(codeBcid)}`)
+      // Le code est normalisé avant d'être cherché : il se recopie d'un livre,
+      // et personne ne tape les espaces ou les majuscules d'un code affiché en
+      // capitales. Le filtre de l'API est insensible à la casse ; le nettoyage
+      // ici évite en plus les espaces de trop, et le message d'erreur montre la
+      // forme canonique.
+      const codeNormalise = codeBcid.trim().toUpperCase()
+      const resultats = await api.listExemplaires(`?codeBcid=${encodeURIComponent(codeNormalise)}`)
       const liste = Array.isArray(resultats) ? resultats : resultats.member ?? []
       if (liste.length === 0) {
-        throw new Error(`Aucun exemplaire ne porte le code "${codeBcid}".`)
+        throw new Error(`Aucun exemplaire ne porte le code "${codeNormalise}".`)
       }
       const exemplaire = liste[0]
       await api.createMouvement({
@@ -68,7 +74,16 @@ export function DeclareTrouvaillePage() {
       <form onSubmit={handleSubmit}>
         <label>
           Code BCID (inscrit sur l'exemplaire)
-          <input value={codeBcid} onChange={(e) => setCodeBcid(e.target.value)} required maxLength={20} />
+          <input
+            value={codeBcid}
+            onChange={(e) => setCodeBcid(e.target.value)}
+            required
+            maxLength={20}
+            placeholder="PL-XXXXX-FR"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+          />
         </label>
         <ChoixPosition
           latitude={latitude}

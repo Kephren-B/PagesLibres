@@ -45,7 +45,11 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ['groups' => ['exemplaire:read']],
     denormalizationContext: ['groups' => ['exemplaire:write']],
 )]
-#[ApiFilter(SearchFilter::class, properties: ['codeBcid' => 'exact', 'livre' => 'exact', 'statut' => 'exact'])]
+// `codeBcid` en `iexact` : celui qui déclare une trouvaille recopie un code lu
+// sur un livre, souvent en minuscules sur un clavier de téléphone. Une recherche
+// sensible à la casse répondait « aucun exemplaire ne porte ce code » alors que
+// le code existait — mesuré : « pl-qnrbp-fr » ne trouvait rien.
+#[ApiFilter(SearchFilter::class, properties: ['codeBcid' => 'iexact', 'livre' => 'exact', 'statut' => 'exact'])]
 // Le BCID est unique : un doublon doit répondre 422 avec un message lisible,
 // pas remonter l'erreur d'index de la base en 500. Les valeurs nulles sont
 // ignorées (ignoreNull par défaut), le temps que le processeur le renseigne.
