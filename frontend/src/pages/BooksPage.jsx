@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api, requeteLivres } from '../api/client'
 import { HomeMap } from '../components/HomeMap'
 import {
@@ -26,10 +26,13 @@ const STATUTS = [
 ]
 
 export function BooksPage() {
+  // Le fil d'Ariane d'une fiche pointe vers « /?categorie=… » : le catalogue
+  // s'ouvre donc déjà filtré, au lieu d'ignorer le paramètre.
+  const [parametres] = useSearchParams()
   const [livres, setLivres] = useState([])
   const [recherche, setRecherche] = useState('')
   const [titre, setTitre] = useState('')
-  const [categorie, setCategorie] = useState('')
+  const [categorie, setCategorie] = useState(() => parametres.get('categorie') ?? '')
   const [categories, setCategories] = useState([])
   const [page, setPage] = useState(1)
   // La dernière page reçue était-elle pleine ? Sinon, le catalogue est fini.

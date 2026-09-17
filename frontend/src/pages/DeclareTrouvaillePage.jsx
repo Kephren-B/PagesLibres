@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { ChoixPosition } from '../components/ChoixPosition'
 
 export function DeclareTrouvaillePage() {
-  const [codeBcid, setCodeBcid] = useState('')
+  // Le bouton « J'ai trouvé ce livre » de la fiche arrive avec le code dans
+  // l'URL : le trouveur n'a plus qu'à confirmer le lieu.
+  const [parametres] = useSearchParams()
+  const [codeBcid, setCodeBcid] = useState(() => parametres.get('code') ?? '')
   const [latitude, setLatitude] = useState('')
   const [longitude, setLongitude] = useState('')
   const [message, setMessage] = useState('')

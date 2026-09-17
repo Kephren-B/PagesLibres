@@ -1,18 +1,37 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { urlCouverture } from '../api/googleBooks'
 import { useAuth } from '../context/AuthContext'
 import { JourneyMap } from '../components/JourneyMap'
 import { ChoixPosition } from '../components/ChoixPosition'
+import { IconeEtiquette } from '../components/Icones'
 import { cadenceEtapes, etiqueterEtapes, DUREE_APPARITION, DUREE_EFFACEMENT, DUREE_TRACE } from '../etapes'
+import {
+  distanceKm,
+  etoiles,
+  formatJours,
+  formatKm,
+  joursDepuis,
+  mouvementDeReference,
+  nombreTrouvailles,
+  noteMoyenne,
+} from '../voyage'
 
+// Vocabulaire aligné sur la maquette haute fidélité du Jalon 2 (Figure 8) :
+// « En transit — à trouver » plutôt que « En circulation » seul.
 const STATUTS = {
-  en_circulation: 'En circulation',
-  trouve: 'Trouvé',
+  en_circulation: 'En transit — à trouver',
+  trouve: 'Trouvé — en lecture',
   signale: 'Signalé',
   retire: 'Retiré',
 }
+
+const ONGLETS = [
+  { cle: 'journal', libelle: 'Journal de voyage' },
+  { cle: 'avis', libelle: 'Avis' },
+  { cle: 'details', libelle: 'Détails' },
+]
 
 const LABELS_MOUVEMENT = {
   liberation: 'Libéré',
@@ -40,6 +59,8 @@ export function BookDetailPage() {
   // Une couverture peut pointer vers une image disparue : on la retire plutôt
   // que d'afficher une icône cassée.
   const [couvertureInvalide, setCouvertureInvalide] = useState(false)
+  const [onglet, setOnglet] = useState('journal')
+  const ongletsRef = useRef([])
 
   const reload = useCallback(async () => {
     const livreData = await api.getLivre(id)
@@ -62,6 +83,35 @@ export function BookDetailPage() {
   useEffect(() => {
     reload().catch((err) => setError(err.message))
   }, [reload])
+
+  /**
+   * Le journal du premier exemplaire s'ouvre d'emblée : la maquette du Jalon 2
+   * (Figure 8) montre un journal affiché, pas un écran à cliquer pour le voir.
+   */
+  useEffect(() => {
+    if (!selectedExemplaire && exemplaires.length > 0) {
+      handleOuvrirJournal(exemplaires[0].idExemplaire)
+    }
+  }, [exemplaires, selectedExemplaire])
+
+  /** Navigation clavier entre onglets — attendue du motif ARIA « tabs ». */
+  function naviguerOnglets(evenement, index) {
+    const deplacement = { ArrowRight: 1, ArrowLeft: -1 }[evenement.key]
+    let cible = null
+
+    if (deplacement) {
+      cible = (index + deplacement + ONGLETS.length) % ONGLETS.length
+    } else if (evenement.key === 'Home') {
+      cible = 0
+    } else if (evenement.key === 'End') {
+      cible = ONGLETS.length - 1
+    }
+
+    if (cible === null) return
+    evenement.preventDefault()
+    setOnglet(ONGLETS[cible].cle)
+    ongletsRef.current[cible]?.focus()
+  }
 
   async function handleOuvrirJournal(exemplaireId) {
     setError(null)
@@ -107,6 +157,10 @@ export function BookDetailPage() {
       setLatitude('')
       setLongitude('')
       await reload()
+      // Le nouvel exemplaire devient celui qu'on regarde : son journal s'ouvre,
+      // avec sa première étape.
+      setOnglet('journal')
+      await handleOuvrirJournal(exemplaire.idExemplaire)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -161,8 +215,29 @@ export function BookDetailPage() {
 
   const couverture = livre.couvertureUrl ? urlCouverture(livre.couvertureUrl) : null
 
+  // Chiffres du panneau « Le voyage en chiffres » (Figure 8 du Jalon 2).
+  const moyenne = noteMoyenne(avis)
+  const { pleines, vides } = etoiles(moyenne)
+  const distance = distanceKm(journeyPoints)
+  const reference = selectedExemplaire
+    ? mouvementDeReference(selectedExemplaire.mouvements, selectedExemplaire.statut)
+    : null
+  const enLecture = selectedExemplaire?.statut === 'trouve'
+
   return (
     <div className="page">
+      <nav className="fil-ariane" aria-label="Fil d'Ariane">
+        <Link to="/">Accueil</Link>
+        <span className="fil-ariane-sep" aria-hidden="true">›</span>
+        {livre.categorie && (
+          <>
+            <Link to={`/?categorie=${encodeURIComponent(livre.categorie)}`}>{livre.categorie}</Link>
+            <span className="fil-ariane-sep" aria-hidden="true">›</span>
+          </>
+        )}
+        <span aria-current="page">{livre.titre}</span>
+      </nav>
+
       <div className="livre-entete">
         {couverture && !couvertureInvalide && (
           <img
@@ -176,28 +251,91 @@ export function BookDetailPage() {
         <div className="livre-entete-texte">
           <h1>{livre.titre}</h1>
           <p className="subtitle">{livre.auteur} — {livre.categorie}{livre.anneePublication ? ` (${livre.anneePublication})` : ''}</p>
+          {moyenne !== null && (
+            <p className="livre-note">
+              <span className="livre-note-etoiles" aria-hidden="true">{'★'.repeat(pleines)}{'☆'.repeat(vides)}</span>
+              <span className="sr-only">{`Note moyenne ${moyenne.toFixed(1).replace('.', ',')} sur 5, sur ${avis.length} avis`}</span>
+              <span className="livre-note-valeur" aria-hidden="true">{`${moyenne.toFixed(1).replace('.', ',')}/5 · ${avis.length} avis`}</span>
+            </p>
+          )}
           {livre.resume && <p>{livre.resume}</p>}
         </div>
       </div>
 
       {error && <p className="error">{error}</p>}
 
-      <h2>Exemplaires en circulation</h2>
+      <h2>Exemplaires</h2>
       <ul className="exemplaire-list">
         {exemplaires.map((exemplaire) => (
-          <li key={exemplaire.idExemplaire}>
-            <code className="stamp">{exemplaire.codeBcid}</code> — {STATUTS[exemplaire.statut] ?? exemplaire.statut}
-            <button type="button" onClick={() => handleOuvrirJournal(exemplaire.idExemplaire)}>
-              Voir le journal de voyage
-            </button>
+          <li key={exemplaire.idExemplaire} className="exemplaire-carte">
+            <div className="exemplaire-code">
+              <code className="stamp exemplaire-tampon">{exemplaire.codeBcid}</code>
+              <span className="exemplaire-code-legende">Code exemplaire</span>
+            </div>
+            <p className="exemplaire-statut">
+              <span className="statut-point" data-statut={exemplaire.statut} aria-hidden="true" />
+              <span className="exemplaire-statut-legende">Statut actuel</span>
+              <strong>{STATUTS[exemplaire.statut] ?? exemplaire.statut}</strong>
+            </p>
+            <div className="exemplaire-actions">
+              <button
+                type="button"
+                className="bouton-journal"
+                aria-pressed={selectedExemplaire?.idExemplaire === exemplaire.idExemplaire}
+                onClick={() => {
+                  setOnglet('journal')
+                  handleOuvrirJournal(exemplaire.idExemplaire)
+                }}
+              >
+                Voir le journal de voyage
+              </button>
+              <Link
+                className="bouton-trouvaille"
+                to={`/trouvaille?code=${encodeURIComponent(exemplaire.codeBcid)}`}
+              >
+                <IconeEtiquette />
+                J'ai trouvé ce livre
+              </Link>
+            </div>
           </li>
         ))}
         {exemplaires.length === 0 && <li>Aucun exemplaire libéré pour l'instant.</li>}
       </ul>
 
-      {selectedExemplaire && (
-        <div className="journal">
-          <h3>Journal de voyage — <span className="stamp">{selectedExemplaire.codeBcid}</span></h3>
+      <div className="onglets">
+        <div className="onglets-barre" role="tablist" aria-label="Contenu de la fiche">
+          {ONGLETS.map((item, index) => (
+            <button
+              key={item.cle}
+              type="button"
+              className="onglet-bouton"
+              role="tab"
+              id={`onglet-${item.cle}`}
+              aria-selected={onglet === item.cle}
+              aria-controls={`panneau-${item.cle}`}
+              tabIndex={onglet === item.cle ? 0 : -1}
+              ref={(element) => {
+                ongletsRef.current[index] = element
+              }}
+              onClick={() => setOnglet(item.cle)}
+              onKeyDown={(evenement) => naviguerOnglets(evenement, index)}
+            >
+              {item.libelle}
+              {item.cle === 'avis' && avis.length > 0 ? ` (${avis.length})` : ''}
+            </button>
+          ))}
+        </div>
+
+        <section
+          id="panneau-journal"
+          role="tabpanel"
+          aria-labelledby="onglet-journal"
+          hidden={onglet !== 'journal'}
+          className="onglet-panneau"
+        >
+          {selectedExemplaire ? (
+            <div className="voyage">
+              <div className="journal">
           <JourneyMap key={selectedExemplaire.idExemplaire} points={journeyPoints} />
           <ol
             className="timeline"
@@ -241,8 +379,110 @@ export function BookDetailPage() {
               </li>
             )}
           </ol>
+            </div>
+
+            {/* Le voyage en chiffres — panneau de la Figure 8 du Jalon 2. */}
+            <aside className="voyage-chiffres">
+              <h4>Le voyage en chiffres</h4>
+              <dl>
+                <div className="voyage-chiffre">
+                  <dt>Distance parcourue</dt>
+                  <dd>{formatKm(distance)}</dd>
+                </div>
+                <div className="voyage-chiffre">
+                  <dt>Nombre de trouvailles</dt>
+                  <dd>{nombreTrouvailles(selectedExemplaire.mouvements)}</dd>
+                </div>
+                <div className="voyage-chiffre">
+                  <dt>{enLecture ? 'En lecture depuis' : 'En circulation depuis'}</dt>
+                  <dd>{formatJours(joursDepuis(reference?.dateMouvement))}</dd>
+                </div>
+              </dl>
+            </aside>
+          </div>
+          ) : (
+            <p>Aucun journal à afficher : ce livre n'a pas encore été libéré.</p>
+          )}
+        </section>
+
+        <section
+          id="panneau-avis"
+          role="tabpanel"
+          aria-labelledby="onglet-avis"
+          hidden={onglet !== 'avis'}
+          className="onglet-panneau"
+        >
+          <h3>Avis des lecteurs</h3>
+      {avis.length === 0 && <p>Aucun avis pour l'instant.</p>}
+      <ul className="avis-list">
+        {avis.map((avisItem) => (
+          <li key={avisItem.idAvis}>
+            <strong>{avisItem.utilisateur?.pseudo ?? 'Anonyme'}</strong> — {'★'.repeat(avisItem.note)}{'☆'.repeat(5 - avisItem.note)}
+            {avisItem.commentaire && <p>{avisItem.commentaire}</p>}
+            <ul className="commentaire-list">
+              {(commentaires[avisItem.idAvis] ?? []).map((c) => (
+                <li key={c.idCommentaire}>
+                  <strong>{c.utilisateur?.pseudo ?? 'Anonyme'}</strong> — {c.contenu}
+                </li>
+              ))}
+            </ul>
+            {isAuthenticated && (
+              <form className="inline-form" onSubmit={(e) => handleAjouterCommentaire(e, avisItem.idAvis)}>
+                <input
+                  value={commentContenu}
+                  onChange={(e) => setCommentContenu(e.target.value)}
+                  placeholder="Répondre…"
+                  required
+                />
+                <button type="submit">Commenter</button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {isAuthenticated && (
+        <div className="page-form">
+          <h4>Donner mon avis</h4>
+          <form onSubmit={handleAjouterAvis}>
+            <label>
+              Note (1-5)
+              <select value={note} onChange={(e) => setNote(e.target.value)}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Commentaire
+              <textarea value={avisTexte} onChange={(e) => setAvisTexte(e.target.value)} />
+            </label>
+            <button type="submit">Publier mon avis</button>
+          </form>
         </div>
       )}
+        </section>
+
+        <section
+          id="panneau-details"
+          role="tabpanel"
+          aria-labelledby="onglet-details"
+          hidden={onglet !== 'details'}
+          className="onglet-panneau"
+        >
+          <h3>Détails</h3>
+          <dl className="details-liste">
+            <div><dt>ISBN</dt><dd>{livre.isbn ?? '—'}</dd></div>
+            <div><dt>Catégorie</dt><dd>{livre.categorie || '—'}</dd></div>
+            <div><dt>Année de publication</dt><dd>{livre.anneePublication ?? '—'}</dd></div>
+            <div><dt>Exemplaires enregistrés</dt><dd>{exemplaires.length}</dd></div>
+            <div>
+              <dt>Note moyenne</dt>
+              <dd>{moyenne !== null ? `${moyenne.toFixed(1).replace('.', ',')} / 5` : '—'}</dd>
+            </div>
+          </dl>
+        </section>
+      </div>
 
       {isAuthenticated && (
         <div className="page-form">
@@ -279,56 +519,6 @@ export function BookDetailPage() {
               raconter la suite.
             </p>
           )}
-        </div>
-      )}
-
-      <h2>Avis des lecteurs</h2>
-      {avis.length === 0 && <p>Aucun avis pour l'instant.</p>}
-      <ul className="avis-list">
-        {avis.map((avisItem) => (
-          <li key={avisItem.idAvis}>
-            <strong>{avisItem.utilisateur?.pseudo ?? 'Anonyme'}</strong> — {'★'.repeat(avisItem.note)}{'☆'.repeat(5 - avisItem.note)}
-            {avisItem.commentaire && <p>{avisItem.commentaire}</p>}
-            <ul className="commentaire-list">
-              {(commentaires[avisItem.idAvis] ?? []).map((c) => (
-                <li key={c.idCommentaire}>
-                  <strong>{c.utilisateur?.pseudo ?? 'Anonyme'}</strong> — {c.contenu}
-                </li>
-              ))}
-            </ul>
-            {isAuthenticated && (
-              <form className="inline-form" onSubmit={(e) => handleAjouterCommentaire(e, avisItem.idAvis)}>
-                <input
-                  value={commentContenu}
-                  onChange={(e) => setCommentContenu(e.target.value)}
-                  placeholder="Répondre…"
-                  required
-                />
-                <button type="submit">Commenter</button>
-              </form>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {isAuthenticated && (
-        <div className="page-form">
-          <h3>Donner mon avis</h3>
-          <form onSubmit={handleAjouterAvis}>
-            <label>
-              Note (1-5)
-              <select value={note} onChange={(e) => setNote(e.target.value)}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Commentaire
-              <textarea value={avisTexte} onChange={(e) => setAvisTexte(e.target.value)} />
-            </label>
-            <button type="submit">Publier mon avis</button>
-          </form>
         </div>
       )}
     </div>
